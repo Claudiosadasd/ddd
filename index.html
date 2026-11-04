@@ -816,6 +816,7 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
         <div class="setting-row admin-only"><div><h4>Documentos da empresa</h4><p>Alvará IMT, certidão permanente, seguros, contratos e documentos fiscais num só local.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-files="org|org">Abrir documentos</button></span></div>
         <div class="setting-row admin-only"><div><h4>Cópia de segurança</h4><p>Guarda todos os dados do stand num texto (JSON) e restaura-os quando quiseres. Os ficheiros carregados ficam no navegador e não entram na cópia.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-backup-copy>Copiar cópia</button> <button class="btn btn-ghost" type="button" data-backup-restore>Restaurar</button></span></div>
         <div class="setting-row admin-only"><div><h4>Base de dados</h4><p id="cloudStatus">A ligar…</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-cloud-save>Guardar agora</button> <button class="btn btn-ghost" type="button" data-cloud-restore>Restaurar</button></span></div>
+        <div class="setting-row admin-only"><div><h4>Stock para portais automóvel</h4><p>Gera o ficheiro com as viaturas disponíveis (matrícula, marca, modelo, versão, ano, km, combustível, cor, preço) para enviar a portais como Standvirtual, OLX ou CustoJusto. O endereço automático (URL que o portal consulta sozinho) e a ligação direta às contas dos portais só existem na versão com servidor.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-portal-feed="csv">Copiar CSV</button> <button class="btn btn-ghost" type="button" data-portal-feed="xml">Copiar XML</button></span></div>
         <div class="setting-row admin-only acc-demo-only"><div><h4>Repor dados da conta demo</h4><p>Restaura os dados iniciais da conta e apaga o que foi criado neste navegador (as contas de vendedor mantêm-se).</p></div><span class="meta"><button class="btn btn-ghost" id="btnSeed2">↺ Repor dados</button></span></div>
         <div class="audit-box admin-only" id="auditBox"></div>
       </div>
@@ -2297,6 +2298,28 @@ document.addEventListener('click',function(e){
 });
 (function(){var sv=save;save=function(){sv();scheduleSync()};var ra=renderAll;renderAll=function(){ra();renderCloudStatus()};})();
 initCloud();
+
+/* ---- ficheiro de stock para portais ---- */
+function xmlEsc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function portalRows(){
+  return (STORE.vehicles||[]).filter(function(v){return v.status==='Disponível'}).map(function(v){
+    return {referencia:v.id,matricula:v.plate||'',marca:v.brand||'',modelo:v.model||'',versao:v.version||'',ano:v.year||'',km:v.km||'',combustivel:v.fuel||'',cor:v.color||'',preco_eur:v.askingCents?(v.askingCents/100).toFixed(2):'',descricao:v.notes||'',fotos:''};
+  });
+}
+function portalFeed(fmt){
+  var rows=portalRows();
+  if(!rows.length){toast('Não há viaturas disponíveis para exportar.','err');return;}
+  var keys=Object.keys(rows[0]),out;
+  if(fmt==='xml'){
+    var org=(STORE.org&&(STORE.org.name||STORE.org.company))||'Stand';
+    out='<?xml version="1.0" encoding="UTF-8"?>\n<stock empresa="'+xmlEsc(org)+'" gerado="'+new Date().toISOString()+'" total="'+rows.length+'">\n'+rows.map(function(r){return '  <viatura>\n'+keys.map(function(k){return '    <'+k+'>'+xmlEsc(r[k])+'</'+k+'>'}).join('\n')+'\n  </viatura>'}).join('\n')+'\n</stock>';
+  }else{
+    var q=function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'};
+    out=keys.join(';')+'\r\n'+rows.map(function(r){return keys.map(function(k){return q(r[k])}).join(';')}).join('\r\n');
+  }
+  copyText(out,'Stock ('+rows.length+' viaturas) copiado em '+fmt.toUpperCase()+'.','Stock para portais · '+fmt.toUpperCase(),'nexora-stock.'+fmt,fmt==='xml'?'application/xml':'text/csv');
+}
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-portal-feed]');if(b&&isAdmin())portalFeed(b.getAttribute('data-portal-feed'))});
 var lastErrAt=0;
 function showErr(m){var n=Date.now();if(n-lastErrAt<4000)return;lastErrAt=n;try{toast('Erro: '+String(m||'desconhecido').slice(0,140),'err')}catch(e){}}
 window.addEventListener('error',function(e){showErr(e.message)});
