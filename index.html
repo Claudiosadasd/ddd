@@ -743,7 +743,7 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
 
     <section class="view" id="v-marketplace">
       <div class="view-head"><div><h1>Marketplace entre stands</h1><p id="mkSub">Viaturas à venda de outros stands, para compra e troca entre profissionais.</p></div></div>
-      <div class="field-note" style="margin-bottom:14px">Modo demonstração: os anúncios de outros stands são exemplos fictícios. Os anúncios reais entre stands diferentes só funcionam quando houver servidor partilhado. Os seus anúncios publicados aparecem aqui com a etiqueta "O seu stand".</div>
+      <div class="field-note" style="margin-bottom:14px">Aba partilhada entre contas: todas as contas veem todos os anúncios e os dados completos da viatura. Só a conta que publicou pode editar ou apagar o seu anúncio; as outras consultam e contactam o stand. Demonstração: a partilha funciona entre contas neste navegador; entre dispositivos precisa de servidor.</div>
       <div class="panel" style="margin-bottom:16px">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
           <div class="field"><label for="mkQ">Pesquisar</label><input id="mkQ" placeholder="Marca, modelo, stand…" maxlength="60" autocomplete="off"></div>
@@ -775,30 +775,12 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
     </section>
 
     <section class="view" id="v-avaliador">
-      <div class="view-head"><div><h1>Avaliador de usados</h1><p id="avalSub">O cliente indica a viatura e recebe uma estimativa; o stand fica com o contacto.</p></div></div>
-      <div class="field-note" style="margin-bottom:14px">Modo demonstração: a estimativa usa regras simples (não são valores de mercado) e os pedidos ficam guardados neste navegador. A página pública para clientes, as fotos, a verificação por SMS e a cobrança real por contacto precisam de servidor.</div>
-      <div class="panel" style="margin-bottom:16px">
-        <div class="panel-head"><h3>Pré-visualização do que o cliente vê</h3><span>Estimativa não vinculativa</span></div>
-        <div id="avalForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
-          <div class="field"><label for="avPlate">Matrícula <span class="req">*</span></label><input id="avPlate" placeholder="AA-00-AA" maxlength="8" autocomplete="off"></div>
-          <div class="field"><label for="avBrand">Marca <span class="req">*</span></label><select id="avBrand"></select></div>
-          <div class="field"><label for="avModel">Modelo <span class="req">*</span></label><input id="avModel" maxlength="40" autocomplete="off"></div>
-          <div class="field"><label for="avYear">Ano <span class="req">*</span></label><input id="avYear" type="number" inputmode="numeric" min="1995" placeholder="2019"></div>
-          <div class="field"><label for="avKm">Quilómetros <span class="req">*</span></label><input id="avKm" type="number" inputmode="numeric" min="0" max="999999" placeholder="120000"></div>
-          <div class="field"><label for="avFuel">Combustível</label><select id="avFuel"><option>Gasolina</option><option>Diesel</option><option>Híbrido</option><option>Elétrico</option></select></div>
-          <div class="field"><label for="avCond">Estado</label><select id="avCond"><option>Excelente</option><option selected>Bom</option><option>Razoável</option><option>Necessita reparação</option></select></div>
-          <div class="field"><label for="avName">Nome <span class="req">*</span></label><input id="avName" maxlength="80" autocomplete="off"></div>
-          <div class="field"><label for="avPhone">Telemóvel <span class="req">*</span></label><input id="avPhone" inputmode="tel" maxlength="16" placeholder="912 345 678" autocomplete="off"></div>
-          <div class="field"><label for="avEmail">Email</label><input id="avEmail" type="email" maxlength="80" autocomplete="off"></div>
-          <div class="field full" style="grid-column:1/-1"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:500"><input id="avConsent" type="checkbox" style="width:auto;margin-top:3px"> Autorizo o stand a contactar-me sobre esta avaliação e a tratar os meus dados para esse fim.</label></div>
-          <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" type="button" id="avSubmitBtn" data-aval-submit>Ver estimativa</button><button class="btn btn-ghost" type="button" id="avCancel" data-aval-cancel style="display:none">Cancelar edição</button><button class="btn btn-ghost" type="button" data-aval-example>Preencher exemplo</button><span id="avalMsg" role="status" style="font-size:12.5px"></span></div>
-        </div>
-        <div id="avalResult" style="margin-top:14px"></div>
-      </div>
+      <div class="view-head"><div><h1>Avaliador de usados</h1><p id="avalSub">Pedidos de avaliação de clientes, visíveis a todas as contas.</p></div></div>
+      <div class="field-note" style="margin-bottom:14px">Consulta partilhada: todas as contas veem os pedidos (só leitura). Abra a ficha de cada viatura para ver os dados, ligar ao cliente ou negociar. Demonstração: os pedidos ficam guardados neste navegador; a entrada de pedidos reais por clientes, fotos, SMS e cobrança precisam de servidor.</div>
       <div class="panel">
         <div class="panel-head"><h3>Pedidos recebidos</h3><span id="avalTotals"></span></div>
         <div class="table-wrap"><div class="t-scroll"><table>
-          <thead><tr><th>Data</th><th>Cliente</th><th>Viatura</th><th class="num">Estimativa</th><th>Contacto</th><th>Faturável</th><th class="num">Ações</th></tr></thead>
+          <thead><tr><th>Data</th><th>Cliente</th><th>Viatura</th><th class="num">Estimativa</th><th>Contacto</th><th>Faturável</th><th class="num">Ficha</th></tr></thead>
           <tbody id="avalBody"></tbody>
         </table></div></div>
       </div>
@@ -1883,23 +1865,40 @@ function avFillExample(){
   g('avPlate').value=x.plate;g('avBrand').value=x.brand;g('avModel').value=x.model;g('avYear').value=x.year;g('avKm').value=x.km;g('avFuel').value=x.fuel;g('avCond').value=x.cond;g('avName').value=x.name;g('avPhone').value=x.phone;g('avEmail').value=x.email;g('avConsent').checked=true;
   g('avalMsg').style.color='var(--muted)';g('avalMsg').textContent='Exemplo preenchido: carrega em "Ver estimativa".';g('avalResult').innerHTML='';
 }
+function avLeads(){
+  var sh=shGet(),k=myKey(),ch=false;
+  (STORE.valuations||[]).forEach(function(x){
+    if(sh.leads.some(function(l){return l.id===x.id}))return;
+    var c=findCustomer(x.customerId)||{};
+    sh.leads.push({id:x.id,ownerKey:k,stand:(STORE.org&&STORE.org.name)||'Stand',at:x.at,plate:x.plate,brand:x.brand,model:x.model,year:x.year,km:x.km,fuel:x.fuel,cond:x.cond,low:x.low,high:x.high,name:c.name||'',phone:c.phone||x.phone||'',email:c.email||'',consent:!!x.consent,billable:!!x.billable,example:!!x.example});ch=true;
+  });
+  if(ch)shPut(sh);return sh.leads;
+}
+function avFicha(id){
+  var l=shGet().leads.find(function(x){return x.id===id});if(!l)return;
+  var row=function(k,v){return v===''||v==null?'':'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span style="color:var(--muted)">'+k+'</span><b style="text-align:right">'+escapeHtml(String(v))+'</b></div>'};
+  var tel=String(l.phone||'').replace(/[^\d+]/g,'');
+  document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:480px"><div class="modal-head"><div><span>FICHA PARA NEGOCIAR</span><h2>'+escapeHtml(l.brand+' '+l.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
+   '<div style="font-size:20px;font-weight:800;margin-bottom:8px">'+euro(l.low*100)+' – '+euro(l.high*100)+' <span style="font-size:12px;font-weight:500;color:var(--muted)">estimativa</span></div>'+
+   row('Matrícula',l.plate)+row('Ano',l.year)+row('Quilómetros',Number(l.km).toLocaleString('pt-PT')+' km')+row('Combustível',l.fuel)+row('Estado',l.cond)+row('Cliente',l.name)+row('Telemóvel',l.phone)+row('Email',l.email)+row('Pedido em',fmtDate(new Date(l.at).toISOString().slice(0,10)))+row('Autorização de contacto',l.consent?'Sim':'Não')+
+   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar</button>'+(tel?'<a class="btn btn-ghost" href="tel:'+escapeHtml(tel)+'">Ligar</a>':'')+'<button type="button" class="btn btn-primary" data-lead-chat="'+escapeHtml(l.id)+'">Negociar (chat)</button></div></div></div>';
+  var cl=function(){document.getElementById('modalRoot').innerHTML=''};
+  document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
+  document.getElementById('modalBackdrop').addEventListener('mousedown',function(e){if(e.target.id==='modalBackdrop')cl()});
+}
 function renderAvaliador(){
   avSeed();
-  var sel=document.getElementById('avBrand');
-  if(sel&&!sel.options.length){var all=[].concat(AV_BRANDS.premium,AV_BRANDS.medio,AV_BRANDS.economico).sort(function(a,b){return a==='Outra'?1:b==='Outra'?-1:a.localeCompare(b,'pt')});sel.innerHTML='<option value="">Escolher…</option>'+all.map(function(b){return '<option>'+escapeHtml(b)+'</option>'}).join('');}
-  var list=(STORE.valuations||[]).slice().sort(function(a,b){return b.at-a.at});
-  var bill=list.filter(function(x){return x.billable});
-  var mo=new Date().toISOString().slice(0,7),billMo=bill.filter(function(x){return new Date(x.at).toISOString().slice(0,7)===mo});
-  document.getElementById('avalTotals').textContent=list.length+' pedidos · '+billMo.length+' faturáveis este mês · '+euro(billMo.length*AV_FEE_CENTS)+' (demo, '+euro(AV_FEE_CENTS)+'/contacto)';
+  var list=avLeads().slice().sort(function(a,b){return b.at-a.at});
+  document.getElementById('avalTotals').textContent=list.length+' pedidos · só leitura';
   var b=document.getElementById('bubble-avaliador');if(b)b.textContent=list.length||'';
   document.getElementById('avalBody').innerHTML=list.map(function(x){
-    var c=findCustomer(x.customerId);
-    return '<tr><td>'+fmtDate(new Date(x.at).toISOString().slice(0,10))+'</td><td class="cell-primary">'+escapeHtml(c?c.name:'—')+(x.example?' <span class="pill flat">exemplo</span>':'')+'<span class="cell-sub">'+escapeHtml(c?c.phone:'')+'</span></td>'+
+    var tel=String(x.phone||'').replace(/[^\d+]/g,'');
+    return '<tr><td>'+fmtDate(new Date(x.at).toISOString().slice(0,10))+'</td><td class="cell-primary">'+escapeHtml(x.name||'—')+(x.example?' <span class="pill flat">exemplo</span>':'')+'<span class="cell-sub">'+escapeHtml(x.stand||'')+'</span></td>'+
       '<td>'+escapeHtml(x.brand)+' '+escapeHtml(x.model)+'<span class="cell-sub">'+escapeHtml(x.plate)+' · '+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km</span></td>'+
-      '<td class="num">'+euro(x.low*100)+' – '+euro(x.high*100)+'</td><td>'+(x.consent?'<span class="pill good">Autorizado</span>':'<span class="pill flat">—</span>')+'</td>'+
+      '<td class="num">'+euro(x.low*100)+' – '+euro(x.high*100)+'</td><td>'+(tel?'<a href="tel:'+escapeHtml(tel)+'">'+escapeHtml(x.phone)+'</a>':'—')+'</td>'+
       '<td>'+(x.billable?'<span class="pill good">Sim</span>':'<span class="pill warn">Duplicado</span>')+'</td>'+
-      '<td class="num" style="white-space:nowrap"><button class="btn btn-ghost" type="button" data-aval-edit="'+escapeHtml(x.id)+'" aria-label="Editar pedido">✎ Editar</button> <button class="btn btn-ghost" type="button" data-aval-del="'+escapeHtml(x.id)+'" aria-label="Apagar pedido">× Apagar</button></td></tr>';
-  }).join('')||'<tr><td colspan="7"><div class="table-empty">Ainda não há pedidos. Experimenta o formulário acima.</div></td></tr>';
+      '<td class="num"><button class="btn btn-primary" type="button" data-lead-ficha="'+escapeHtml(x.id)+'">Abrir ficha</button></td></tr>';
+  }).join('')||'<tr><td colspan="7"><div class="table-empty">Ainda não há pedidos.</div></td></tr>';
 }
 function avalSubmit(){
   var g=function(id){return document.getElementById(id)},msg=g('avalMsg');
@@ -2006,10 +2005,74 @@ var MK_SAMPLES=[
  {id:'mk9',stand:'Alentejo Auto',city:'Évora',brand:'Dacia',model:'Duster',version:'1.5 dCi Prestige',year:2018,km:118000,fuel:'Diesel',price:13500,days:8},
  {id:'mk10',stand:'Lisboa Premium Cars',city:'Lisboa',brand:'Kia',model:'Ceed',version:'1.0 T-GDi Vision',year:2020,km:58000,fuel:'Gasolina',price:15700,days:9}
 ];
+
+/* ---------------- shared store (all accounts, same browser) ---------------- */
+var SH_KEY='nexora_shared_v1';
+function shGet(){try{var o=JSON.parse(localStorage.getItem(SH_KEY)||'null');if(o&&Array.isArray(o.listings)&&Array.isArray(o.leads))return o}catch(e){}return {listings:[],leads:[]}}
+function shPut(o){try{localStorage.setItem(SH_KEY,JSON.stringify(o));return true}catch(e){toast('Não foi possível guardar na área partilhada.','err');return false}}
+function myKey(){return String((CUR_ACC&&CUR_ACC.dataKey)||'')}
+function shVehicleSnap(v){return {vid:v.id,brand:v.brand,model:v.model,version:v.version||'',plate:v.plate||'',year:v.year,km:v.km,fuel:v.fuel,color:v.color||'',status:v.status,notes:v.notes||''}}
+function shSyncMine(){
+  var sh=shGet(),k=myKey(),ch=false;
+  sh.listings=sh.listings.filter(function(l){
+    if(l.ownerKey!==k)return true;
+    var v=STORE.vehicles.find(function(x){return x.id===l.vid});
+    if(!v||v.status!=='Disponível'){if(v&&v.published)v.published=false;ch=true;return false}
+    return true;
+  });
+  STORE.vehicles.forEach(function(v){
+    if(v.published&&v.status==='Disponível'&&!sh.listings.some(function(l){return l.ownerKey===k&&l.vid===v.id})){
+      sh.listings.push(Object.assign({id:uid(),ownerKey:k,stand:(STORE.org&&STORE.org.name)||'Stand',city:(STORE.org&&STORE.org.city)||'',phone:(STORE.org&&STORE.org.phone)||'',priceCents:v.askingCents||0,at:Date.now()},shVehicleSnap(v)));ch=true;
+    }
+  });
+  if(ch)shPut(sh);
+  return sh;
+}
+function mkFicha(id){
+  var sh=shGet(),l=sh.listings.find(function(x){return x.id===id});
+  var x=l?{brand:l.brand,model:l.model,version:l.version,plate:l.plate,year:l.year,km:l.km,fuel:l.fuel,color:l.color,notes:l.notes,price:Math.round((l.priceCents||0)/100),stand:l.stand,city:l.city,phone:l.phone,at:l.at,own:l.ownerKey===myKey(),lid:l.id}:null;
+  if(!x){var m=MK_SAMPLES.find(function(y){return y.id===id});if(!m)return;x=Object.assign({sample:true,lid:m.id,at:Date.now()-m.days*864e5},m)}
+  var row=function(k,v){return v===''||v==null?'':'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span style="color:var(--muted)">'+k+'</span><b style="text-align:right">'+escapeHtml(String(v))+'</b></div>'};
+  var tel=x.phone?String(x.phone).replace(/[^\d+]/g,''):'';
+  document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:480px"><div class="modal-head"><div><span>FICHA DA VIATURA</span><h2>'+escapeHtml(x.brand+' '+x.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
+   '<div style="font-size:22px;font-weight:800;margin-bottom:8px">'+euro(x.price*100)+'</div>'+
+   row('Versão',x.version)+row('Matrícula',x.plate)+row('Ano',x.year)+row('Quilómetros',Number(x.km).toLocaleString('pt-PT')+' km')+row('Combustível',x.fuel)+row('Cor',x.color)+row('Publicado em',fmtDate(new Date(x.at).toISOString().slice(0,10)))+row('Stand',x.stand+(x.city?' · '+x.city:''))+row('Telefone do stand',x.phone)+
+   (x.notes?'<p style="font-size:12.5px;color:var(--muted);margin:10px 0 0">'+escapeHtml(x.notes)+'</p>':'')+
+   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar</button>'+
+   (tel?'<a class="btn btn-ghost" href="tel:'+escapeHtml(tel)+'">Ligar</a>':'')+
+   (x.own?'<button type="button" class="btn btn-ghost" data-mk-edit="'+escapeHtml(x.lid)+'">Editar</button>':'<button type="button" class="btn btn-primary" data-mk-contact="'+escapeHtml(x.lid)+'">Contactar stand</button>')+'</div></div></div>';
+  var cl=function(){document.getElementById('modalRoot').innerHTML=''};
+  document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
+  document.getElementById('modalBackdrop').addEventListener('mousedown',function(e){if(e.target.id==='modalBackdrop')cl()});
+}
+function mkEdit(id){
+  var sh=shGet(),l=sh.listings.find(function(x){return x.id===id});
+  if(!l||l.ownerKey!==myKey()){toast('Só a conta que publicou pode editar este anúncio.','err');return}
+  document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:440px"><div class="modal-head"><div><span>EDITAR ANÚNCIO</span><h2>'+escapeHtml(l.brand+' '+l.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
+   '<div class="field"><label for="mkEdPrice">Preço (€)</label><input id="mkEdPrice" type="number" inputmode="numeric" min="0" value="'+Math.round((l.priceCents||0)/100)+'"></div>'+
+   '<div class="field" style="margin-top:10px"><label for="mkEdNotes">Descrição</label><input id="mkEdNotes" maxlength="300" value="'+escapeHtml(l.notes||'')+'"></div>'+
+   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Cancelar</button><button type="button" class="btn btn-primary" id="mkEdSave">Guardar</button></div></div></div>';
+  var cl=function(){document.getElementById('modalRoot').innerHTML=''};
+  document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
+  document.getElementById('mkEdSave').onclick=function(){
+    var pr=parseInt(document.getElementById('mkEdPrice').value,10);if(!(pr>=0)){toast('Preço inválido.','err');return}
+    var s2=shGet(),l2=s2.listings.find(function(x){return x.id===id});if(!l2||l2.ownerKey!==myKey()){cl();return}
+    l2.priceCents=pr*100;l2.notes=document.getElementById('mkEdNotes').value.trim();shPut(s2);audit('Editou anúncio no marketplace: '+l2.brand+' '+l2.model);cl();renderMarketplace();toast('Anúncio atualizado.','ok');
+  };
+}
+function mkDelete(id){
+  var sh=shGet(),l=sh.listings.find(function(x){return x.id===id});
+  if(!l||l.ownerKey!==myKey()){toast('Só a conta que publicou pode apagar este anúncio.','err');return}
+  askConfirm('Apagar o anúncio de '+l.brand+' '+l.model+' do marketplace? A viatura continua no seu parque.',function(){
+    var s2=shGet();s2.listings=s2.listings.filter(function(x){return x.id!==id});shPut(s2);
+    var v=STORE.vehicles.find(function(x){return x.id===l.vid});if(v)v.published=false;
+    audit('Apagou anúncio no marketplace: '+l.brand+' '+l.model);save();renderAll();toast('Anúncio apagado.','ok');
+  },'Apagar');
+}
 function mkItems(){
-  var org=(STORE.org&&STORE.org.name)||'O seu stand';
-  var own=STORE.vehicles.filter(function(v){return v.published&&v.status==='Disponível'}).map(function(v){return {id:'own-'+v.id,own:true,vid:v.id,stand:org,city:(STORE.org&&STORE.org.city)||'',brand:v.brand,model:v.model,version:v.version||'',year:v.year,km:v.km,fuel:v.fuel,price:Math.round((v.askingCents||0)/100),days:0}});
-  return own.concat(MK_SAMPLES.map(function(x){return Object.assign({sample:true},x)}));
+  var sh=shSyncMine(),k=myKey();
+  var all=sh.listings.map(function(l){return {id:l.id,own:l.ownerKey===k,stand:l.stand,city:l.city,brand:l.brand,model:l.model,version:l.version,year:l.year,km:l.km,fuel:l.fuel,price:Math.round((l.priceCents||0)/100),days:Math.max(0,Math.floor((Date.now()-l.at)/864e5))}});
+  return all.concat(MK_SAMPLES.map(function(x){return Object.assign({sample:true},x)}));
 }
 function renderMarketplace(){
   chSeed();
@@ -2028,7 +2091,7 @@ function renderMarketplace(){
       '<div style="font-size:12px;color:var(--muted)">'+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km · '+escapeHtml(x.fuel)+'</div>'+
       '<div style="font-size:19px;font-weight:800;margin-top:4px">'+euro(x.price*100)+'</div>'+
       '<div style="font-size:11.5px;color:var(--faint)">'+escapeHtml(x.stand)+(x.city?' · '+escapeHtml(x.city):'')+'</div></div>'+
-      '<div style="padding:0 14px 14px">'+(x.own?'<button class="btn btn-ghost" type="button" data-mk-pub="'+escapeHtml(x.vid)+'" style="width:100%">Retirar do marketplace</button>':'<button class="btn btn-primary" type="button" data-mk-contact="'+escapeHtml(x.id)+'" style="width:100%">Contactar stand</button>')+'</div></div>';
+      '<div style="padding:0 14px 14px;display:grid;gap:8px"><button class="btn btn-ghost" type="button" data-mk-ficha="'+escapeHtml(x.id)+'" style="width:100%">Ver ficha</button>'+(x.own?'<div style="display:flex;gap:8px"><button class="btn btn-ghost" type="button" data-mk-edit="'+escapeHtml(x.id)+'" style="flex:1">✎ Editar</button><button class="btn btn-ghost" type="button" data-mk-del="'+escapeHtml(x.id)+'" style="flex:1">× Apagar</button></div>':'<button class="btn btn-primary" type="button" data-mk-contact="'+escapeHtml(x.id)+'" style="width:100%">Contactar stand</button>')+'</div></div>';
   }).join('')||'<div class="table-empty">Nenhuma viatura corresponde aos filtros.</div>';
   document.getElementById('mkMine').innerHTML=STORE.vehicles.map(function(v){
     var ok=v.status==='Disponível';
@@ -2043,13 +2106,21 @@ document.addEventListener('click',function(e){
   if(p){
     if(!isAdmin()){toast('Sem permissão com o perfil Vendedor.','err');return;}
     var v=STORE.vehicles.find(function(x){return x.id===p.getAttribute('data-mk-pub')});if(!v)return;
-    v.published=!v.published;audit((v.published?'Publicou':'Retirou')+' no marketplace: '+v.brand+' '+v.model);save();renderAll();toast(v.published?'Viatura publicada no marketplace.':'Viatura retirada do marketplace.','ok');return;
+    v.published=!v.published;if(!v.published){var s3=shGet();s3.listings=s3.listings.filter(function(l){return !(l.ownerKey===myKey()&&l.vid===v.id)});shPut(s3)}audit((v.published?'Publicou':'Retirou')+' no marketplace: '+v.brand+' '+v.model);save();renderAll();toast(v.published?'Viatura publicada no marketplace.':'Viatura retirada do marketplace.','ok');return;
   }
   var c=e.target.closest('[data-mk-contact]');
   if(c){
-    var it=MK_SAMPLES.find(function(x){return x.id===c.getAttribute('data-mk-contact')});if(!it)return;
-    chOpen(it.id,it.brand+' '+it.model+' '+it.year,it.stand);
+    var cid=c.getAttribute('data-mk-contact'),it=MK_SAMPLES.find(function(x){return x.id===cid});
+    if(!it){var l=shGet().listings.find(function(x){return x.id===cid});if(l)it={id:l.id,brand:l.brand,model:l.model,year:l.year,stand:l.stand}}
+    if(!it)return;document.getElementById('modalRoot').innerHTML='';
+    if(location.hash!=='#marketplace')location.hash='#marketplace';
+    chOpen(it.id,it.brand+' '+it.model+' '+it.year,it.stand);return;
   }
+  var f=e.target.closest('[data-mk-ficha]');if(f){mkFicha(f.getAttribute('data-mk-ficha'));return;}
+  var ed=e.target.closest('[data-mk-edit]');if(ed){mkEdit(ed.getAttribute('data-mk-edit'));return;}
+  var dl=e.target.closest('[data-mk-del]');if(dl){mkDelete(dl.getAttribute('data-mk-del'));return;}
+  var lf=e.target.closest('[data-lead-ficha]');if(lf){avFicha(lf.getAttribute('data-lead-ficha'));return;}
+  var ln=e.target.closest('[data-lead-chat]');if(ln){var lid=ln.getAttribute('data-lead-chat'),ld=shGet().leads.find(function(x){return x.id===lid});if(ld){document.getElementById('modalRoot').innerHTML='';location.hash='#marketplace';chOpen('lead-'+ld.id,'Avaliação '+ld.brand+' '+ld.model+' '+ld.year,ld.name);}return;}
 });
 document.addEventListener('input',function(e){if(e.target.id==='mkQ'||e.target.id==='mkMax'||e.target.id==='mkFuel'||e.target.id==='mkSort')renderMarketplace();});
 
