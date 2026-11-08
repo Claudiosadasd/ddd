@@ -496,8 +496,6 @@ body.mob .rail-scrim.show{display:block}
 body.mob .topbar{gap:8px;padding:0 12px;height:56px}
 body.mob .top-logo,body.mob .search,body.mob .user-meta{display:none}
 body.mob .crumb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
-body.mob #btnLogout{font-size:0!important;padding:0!important;width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;overflow:hidden}
-body.mob #btnLogout:before{content:"⏻";font-size:15px;line-height:1;color:var(--ink)}
 body[data-role="staff"] [data-edit-lead]{display:none!important}
 body.mob .rail:not(.open){box-shadow:none;visibility:hidden;transition:transform .18s ease,visibility 0s .18s}body.mob .rail.open{visibility:visible}
 body.mob .view{padding:16px 14px 92px}
@@ -605,7 +603,13 @@ body.mob .icon-btn{min-width:44px}
 body.mob .bn-item{min-height:52px}
 body.mob input,body.mob select{min-height:44px}
 body.mob .rail-item{min-height:46px}
-body.mob #btnLogout{width:44px;height:44px;min-height:44px}
+.pwr{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 15px 0 11px;border-radius:999px;border:1px solid #f1c4c0;background:linear-gradient(180deg,#fff7f6,#fdecea);color:#b42318;font:inherit;font-size:12.5px;font-weight:750;letter-spacing:.01em;cursor:pointer;box-shadow:0 1px 0 #fff inset,0 1px 2px #b4231826;transition:background .15s,color .15s,box-shadow .15s,transform .1s,border-color .15s;flex:0 0 auto}
+.pwr svg{width:18px;height:18px;flex:0 0 auto}
+.pwr:hover{background:#b42318;border-color:#b42318;color:#fff;box-shadow:0 4px 14px #b423184d}
+.pwr:active{transform:scale(.95)}
+.pwr:focus-visible{outline:3px solid #b4231855;outline-offset:2px}
+body.mob .pwr{width:44px;height:44px;padding:0;justify-content:center;gap:0}
+body.mob .pwr span{display:none}
 @media (min-width:600px) and (max-width:860px){html.is-app body.mob .kpis{grid-template-columns:repeat(4,1fr)}html.is-app body.mob .view{padding:20px 22px 96px}}
 @media (prefers-reduced-motion:reduce){html.is-app *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
@@ -714,7 +718,7 @@ body.mob #btnLogout{width:44px;height:44px;min-height:44px}
       <button class="topbar-icon" id="devBtn" type="button" aria-label="Mudar de vista"></button>
       <div id="notifWrap"><button class="topbar-icon" id="notifBell" aria-label="Notificações" aria-haspopup="true"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M5 8a5 5 0 0 1 10 0c0 3.2 1 4.3 1.6 5H3.4C4 12.3 5 11.2 5 8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8.2 16a2 2 0 0 0 3.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span class="notif-badge" id="notifBadge" style="display:none">0</span></button><div class="notif-panel" id="notifPanel" hidden></div></div>
       <div class="user-chip"><span class="user-avatar" id="meAvatar">JS</span><span class="user-meta"><strong id="meName">João Silva</strong><select class="role-select" id="meSelect" aria-label="Ver a aplicação como"></select></span></div>
-      <button class="btn btn-ghost" id="btnLogout" style="padding:7px 12px;font-size:12px">Terminar sessão</button>
+      <button class="pwr" id="btnLogout" type="button" aria-label="Desligar e sair da conta" title="Desligar e sair da conta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.4 6.9a8 8 0 1 0 11.2 0"/></svg><span>Desligar</span></button>
     </header>
 
     <section class="view" id="v-dashboard">
@@ -3001,7 +3005,7 @@ document.addEventListener('click',function(e){
   var t=e.target.closest('[data-auth-tab]');if(t){showAuth(t.getAttribute('data-auth-tab'));return;}
   var pw=e.target.closest('[data-pw-toggle]');if(pw){var i=document.getElementById(pw.getAttribute('data-pw-toggle'));var show=i.type==='password';i.type=show?'text':'password';pw.textContent=show?'Esconder':'Mostrar';return;}
   if(e.target.id==='fillDemo'){document.getElementById('loginEmail').value='demo@nexora.pt';document.getElementById('loginPass').value='Demo2026!';document.getElementById('loginErr').textContent='';return;}
-  if(e.target.id==='btnLogout'){logout();return;}
+  if(e.target.closest('#btnLogout')){askConfirm('Desligar e sair desta conta? Os dados ficam guardados neste dispositivo.',logout,'Desligar');return;}
 });
 document.getElementById('formLogin').addEventListener('submit',function(e){
   e.preventDefault();
