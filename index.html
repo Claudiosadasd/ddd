@@ -555,6 +555,20 @@ body.locked .bnav{display:none!important}
 .plan-ul{list-style:none;margin:2px 0 6px;padding:0;font-size:12px;color:var(--ink);display:flex;flex-direction:column;gap:3px}.plan-ul li:before{content:"✓ ";color:var(--good);font-weight:700}
 .stripe-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card)}.stripe-box p{font-size:12.5px;color:var(--muted);margin:6px 0 10px}.stripe-box code{font-family:var(--mono);background:var(--accent-soft);padding:1px 5px;border-radius:5px}.stripe-box .btn{display:inline-block;text-decoration:none}
 body:not(.is-demo) .acc-demo-only{display:none!important}
+
+/* ---- intro vídeo ---- */
+.intro{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(4,10,28,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .45s ease}
+.intro.show{opacity:1}
+.intro-box{position:relative;width:min(960px,100%);aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08);transform:scale(.96);transition:transform .45s ease}
+.intro.show .intro-box{transform:scale(1)}
+.intro video{width:100%;height:100%;display:block;object-fit:cover;background:#000}
+.intro-btn{position:absolute;border:0;cursor:pointer;font:600 14px/1 inherit;font-family:inherit;color:#fff;background:rgba(10,20,50,.72);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:10px 16px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:background .2s,opacity .35s,transform .35s}
+.intro-btn:hover,.intro-btn:focus-visible{background:#1a6ceb;outline:none}
+.intro-skip{right:14px;bottom:14px;opacity:0;transform:translateY(6px);pointer-events:none}
+.intro-skip.on{opacity:1;transform:none;pointer-events:auto}
+.intro-sound{left:14px;bottom:14px}
+.intro-bar{position:absolute;left:0;bottom:0;height:3px;background:#1a6ceb;width:0}
+@media (max-width:600px){.intro-box{border-radius:12px}.intro-btn{font-size:13px;padding:8px 12px}}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap">
 
@@ -2534,11 +2548,46 @@ document.getElementById('formRegister').addEventListener('submit',function(e){
   gate.addEventListener('pointerleave',function(){tilt.style.transform=''});
 })();
 
+
+/* ---------------- intro vídeo ---------------- */
+function showIntro(){
+  try{
+    var gateEl=document.getElementById('authGate');
+    if(!gateEl||getComputedStyle(gateEl).display==='none')return;
+    var ov=document.createElement('div');ov.className='intro';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Vídeo de apresentação Nexora');
+    ov.innerHTML='<div class="intro-box"><video playsinline preload="auto">'+
+      '<source src="nexora-intro.mp4" type="video/mp4"><source src="/_blob/6b88d0c22a7bdd0c9a936f4f11c7d55e" type="video/mp4"></video>'+
+      '<button type="button" class="intro-btn intro-sound" hidden>🔊 Ativar som</button>'+
+      '<button type="button" class="intro-btn intro-skip" aria-hidden="true" tabindex="-1">Saltar ›</button><div class="intro-bar"></div></div>';
+    document.body.appendChild(ov);
+    var v=ov.querySelector('video'),skip=ov.querySelector('.intro-skip'),snd=ov.querySelector('.intro-sound'),bar=ov.querySelector('.intro-bar'),done=false,canSkip=false;
+    gateEl.setAttribute('aria-hidden','true');
+    function close(){
+      if(done)return;done=true;try{v.pause()}catch(e){}
+      ov.classList.remove('show');gateEl.removeAttribute('aria-hidden');
+      setTimeout(function(){ov.remove();var f=document.getElementById('loginEmail');if(f&&f.offsetParent)try{f.focus()}catch(e){}},450);
+    }
+    var t=setTimeout(function(){canSkip=true;skip.classList.add('on');skip.removeAttribute('aria-hidden');skip.tabIndex=0;},6000);
+    skip.addEventListener('click',function(){clearTimeout(t);close()});
+    snd.addEventListener('click',function(){v.muted=false;v.volume=1;snd.hidden=true;v.play().catch(function(){})});
+    document.addEventListener('keydown',function k(e){if(done){document.removeEventListener('keydown',k);return}if(e.key==='Escape'&&canSkip)close()});
+    v.addEventListener('ended',close);
+    v.addEventListener('timeupdate',function(){if(v.duration)bar.style.width=(v.currentTime/v.duration*100)+'%'});
+    v.addEventListener('error',function(){},true);
+    var srcs=v.querySelectorAll('source');srcs[srcs.length-1].addEventListener('error',function(){close()});
+    requestAnimationFrame(function(){ov.classList.add('show')});
+    v.muted=false;
+    var pr=v.play();
+    if(pr&&pr.catch)pr.catch(function(){v.muted=true;snd.hidden=false;v.play().catch(function(){snd.hidden=false})});
+    // segurança: nunca bloquear a entrada mais de 75 s
+    setTimeout(close,75000);
+  }catch(e){}
+}
 /* ---------------- boot ---------------- */
 document.body.classList.add('locked');
 ensureDemo().then(function(){
   var em=getSession(),acc=em&&getAccounts().find(function(x){return x.email===em});
-  if(acc)enterApp(acc,false);else showAuth('login');
+  if(acc)enterApp(acc,false);else{showAuth('login');showIntro();}
 });
 })();
 </script>
