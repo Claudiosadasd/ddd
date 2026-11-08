@@ -658,6 +658,7 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
       <button class="rail-item" data-view="crm"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="3.4" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="0.9" fill="currentColor"/></svg>Oportunidades<span class="rail-bubble" id="bubble-crm"></span></button>
       <div class="rail-group-label">FINANCEIRO</div>
       <button class="rail-item" data-view="compras"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M4 7h3.2L9 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 13h-3.2L11 16.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 7a6 6 0 0 0 10.6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M16 13a6 6 0 0 0-10.6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Compras / Retomas</button>
+      <button class="rail-item" data-view="avaliador"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5" stroke="currentColor" stroke-width="1.6"/><path d="m12.3 12.3 4.2 4.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Avaliador de usados<span class="rail-bubble" id="bubble-avaliador"></span></button>
       <button class="rail-item" data-view="vendas"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3 10.5 8 5.5a1.6 1.6 0 0 1 1.9-.3l5.6 2.8a1.6 1.6 0 0 1 .8 2.1l-2.5 5.3a1.6 1.6 0 0 1-2.1.8L6 13.4a1.6 1.6 0 0 1-.9-.9L3 10.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12.1" cy="7.9" r="1" fill="currentColor"/></svg>Vendas<span class="rail-bubble" id="bubble-vendas"></span></button>
       <button class="rail-item" data-view="comissoes"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="6.5" cy="6.5" r="2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="13.5" cy="13.5" r="2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 4.5 4.5 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Comissões<span class="rail-bubble" id="bubble-comissoes"></span></button>
       <button class="rail-item" data-view="metas"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 10 15 5M13 3.4V7h3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Metas</button>
@@ -732,6 +733,36 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
         <thead><tr><th>Data</th><th>Viatura</th><th class="num">Valor compra</th><th class="num">Preço anunciado</th><th>Estado</th></tr></thead>
         <tbody id="comprasBody"></tbody>
       </table></div></div>
+    </section>
+
+    <section class="view" id="v-avaliador">
+      <div class="view-head"><div><h1>Avaliador de usados</h1><p id="avalSub">O cliente indica a viatura e recebe uma estimativa; o stand fica com o contacto.</p></div></div>
+      <div class="field-note" style="margin-bottom:14px">Modo demonstração: a estimativa usa regras simples (não são valores de mercado) e os pedidos ficam guardados neste navegador. A página pública para clientes, as fotos, a verificação por SMS e a cobrança real por contacto precisam de servidor.</div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><h3>Pré-visualização do que o cliente vê</h3><span>Estimativa não vinculativa</span></div>
+        <div id="avalForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+          <div class="field"><label for="avPlate">Matrícula <span class="req">*</span></label><input id="avPlate" placeholder="AA-00-AA" maxlength="8" autocomplete="off"></div>
+          <div class="field"><label for="avBrand">Marca <span class="req">*</span></label><select id="avBrand"></select></div>
+          <div class="field"><label for="avModel">Modelo <span class="req">*</span></label><input id="avModel" maxlength="40" autocomplete="off"></div>
+          <div class="field"><label for="avYear">Ano <span class="req">*</span></label><input id="avYear" type="number" inputmode="numeric" min="1995" placeholder="2019"></div>
+          <div class="field"><label for="avKm">Quilómetros <span class="req">*</span></label><input id="avKm" type="number" inputmode="numeric" min="0" max="999999" placeholder="120000"></div>
+          <div class="field"><label for="avFuel">Combustível</label><select id="avFuel"><option>Gasolina</option><option>Diesel</option><option>Híbrido</option><option>Elétrico</option></select></div>
+          <div class="field"><label for="avCond">Estado</label><select id="avCond"><option>Excelente</option><option selected>Bom</option><option>Razoável</option><option>Necessita reparação</option></select></div>
+          <div class="field"><label for="avName">Nome <span class="req">*</span></label><input id="avName" maxlength="80" autocomplete="off"></div>
+          <div class="field"><label for="avPhone">Telemóvel <span class="req">*</span></label><input id="avPhone" inputmode="tel" maxlength="16" placeholder="912 345 678" autocomplete="off"></div>
+          <div class="field"><label for="avEmail">Email</label><input id="avEmail" type="email" maxlength="80" autocomplete="off"></div>
+          <div class="field full" style="grid-column:1/-1"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:500"><input id="avConsent" type="checkbox" style="width:auto;margin-top:3px"> Autorizo o stand a contactar-me sobre esta avaliação e a tratar os meus dados para esse fim.</label></div>
+          <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" type="button" data-aval-submit>Ver estimativa</button><span id="avalMsg" role="status" style="font-size:12.5px"></span></div>
+        </div>
+        <div id="avalResult" style="margin-top:14px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Pedidos recebidos</h3><span id="avalTotals"></span></div>
+        <div class="table-wrap"><div class="t-scroll"><table>
+          <thead><tr><th>Data</th><th>Cliente</th><th>Viatura</th><th class="num">Estimativa</th><th>Contacto</th><th>Faturável</th></tr></thead>
+          <tbody id="avalBody"></tbody>
+        </table></div></div>
+      </div>
     </section>
 
     <section class="view" id="v-vendas">
@@ -1703,7 +1734,7 @@ function renderAudit(){
   el.innerHTML='<h4>Registo de ações do administrador</h4>'+(a.length?'<ul class="audit">'+a.map(function(x){return '<li><span>'+new Date(x.at).toLocaleString('pt-PT')+'</span> <b>'+escapeHtml(x.by)+'</b> · '+escapeHtml(x.action)+'</li>'}).join('')+'</ul>':'<p>Sem ações registadas.</p>');
 }
 function renderAll(){
-  renderMe();renderTeam();renderOrgRow();renderAudit();renderDashboard();renderFrota();renderClientes();renderKanban();renderCompras();renderVendas();renderDespesas();renderRelatorios();renderDanos();renderFornecedores();renderComissoes();renderMetas();renderIuc();refreshFeatUI();
+  renderMe();renderTeam();renderOrgRow();renderAudit();renderDashboard();renderFrota();renderClientes();renderKanban();renderCompras();renderAvaliador();renderVendas();renderDespesas();renderRelatorios();renderDanos();renderFornecedores();renderComissoes();renderMetas();renderIuc();refreshFeatUI();
 }
 
 /* ---------------- CSV export (clipboard — downloads are sandboxed here) ---------------- */
@@ -1734,9 +1765,80 @@ function copyCsv(resource){
   copyText(csv,'CSV de "'+resource+'" copiado — cola no Excel ou Numbers.','CSV · '+resource,'nexora-'+resource+'.csv','text/csv');
 }
 
+/* ---------------- Avaliador de usados (demo) ---------------- */
+var AV_BRANDS={premium:['Audi','BMW','Mercedes-Benz','Volvo','Land Rover','Porsche','Lexus','Mini'],medio:['Volkswagen','Toyota','Skoda','Seat','Cupra','Mazda','Hyundai','Kia','Peugeot','Renault','Ford','Nissan','Honda','Opel','Citroën','Mitsubishi','Suzuki','Jeep'],economico:['Dacia','Fiat','Smart','Alfa Romeo','Outra']};
+var AV_BASE={premium:40000,medio:26000,economico:18000};
+var AV_FEE_CENTS=1500;
+function avTier(b){return AV_BRANDS.premium.indexOf(b)>-1?'premium':AV_BRANDS.economico.indexOf(b)>-1?'economico':'medio'}
+function avEstimate(o){
+  var age=Math.max(0,new Date().getFullYear()-o.year);
+  var v=AV_BASE[avTier(o.brand)]*Math.max(0.18,Math.pow(0.88,age));
+  var exp=Math.max(5000,age*15000),adj=Math.max(-0.12,Math.min(0.30,(o.km-exp)/200000));
+  v*=1-adj;
+  v*={Gasolina:1,Diesel:0.97,'Híbrido':1.05,'Elétrico':1}[o.fuel]||1;
+  v*={Excelente:1.04,Bom:1,Razoável:0.92,'Necessita reparação':0.78}[o.cond]||1;
+  var r=function(x){return Math.max(500,Math.round(x/100)*100)};
+  return {low:r(v*0.92),high:r(v*1.08)};
+}
+function avPlate(raw){
+  var t=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(t.length!==6)return '';
+  var p=t.slice(0,2)+'-'+t.slice(2,4)+'-'+t.slice(4,6);
+  return /^([A-Z]{2}-\d{2}-\d{2}|\d{2}-[A-Z]{2}-\d{2}|\d{2}-\d{2}-[A-Z]{2}|[A-Z]{2}-\d{2}-[A-Z]{2})$/.test(p)?p:'';
+}
+function avPhone(raw){var t=String(raw||'').replace(/[\s.-]/g,'').replace(/^(\+|00)351/,'');return /^[29]\d{8}$/.test(t)?t:''}
+function renderAvaliador(){
+  var sel=document.getElementById('avBrand');
+  if(sel&&!sel.options.length){var all=[].concat(AV_BRANDS.premium,AV_BRANDS.medio,AV_BRANDS.economico).sort(function(a,b){return a==='Outra'?1:b==='Outra'?-1:a.localeCompare(b,'pt')});sel.innerHTML='<option value="">Escolher…</option>'+all.map(function(b){return '<option>'+escapeHtml(b)+'</option>'}).join('');}
+  var list=(STORE.valuations||[]).slice().sort(function(a,b){return b.at-a.at});
+  var bill=list.filter(function(x){return x.billable});
+  var mo=new Date().toISOString().slice(0,7),billMo=bill.filter(function(x){return new Date(x.at).toISOString().slice(0,7)===mo});
+  document.getElementById('avalTotals').textContent=list.length+' pedidos · '+billMo.length+' faturáveis este mês · '+euro(billMo.length*AV_FEE_CENTS)+' (demo, '+euro(AV_FEE_CENTS)+'/contacto)';
+  var b=document.getElementById('bubble-avaliador');if(b)b.textContent=list.length||'';
+  document.getElementById('avalBody').innerHTML=list.map(function(x){
+    var c=findCustomer(x.customerId);
+    return '<tr><td>'+fmtDate(new Date(x.at).toISOString().slice(0,10))+'</td><td class="cell-primary">'+escapeHtml(c?c.name:'—')+'<span class="cell-sub">'+escapeHtml(c?c.phone:'')+'</span></td>'+
+      '<td>'+escapeHtml(x.brand)+' '+escapeHtml(x.model)+'<span class="cell-sub">'+escapeHtml(x.plate)+' · '+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km</span></td>'+
+      '<td class="num">'+euro(x.low*100)+' – '+euro(x.high*100)+'</td><td>'+(x.consent?'<span class="pill good">Autorizado</span>':'<span class="pill flat">—</span>')+'</td>'+
+      '<td>'+(x.billable?'<span class="pill good">Sim</span>':'<span class="pill warn">Duplicado</span>')+'</td></tr>';
+  }).join('')||'<tr><td colspan="6"><div class="table-empty">Ainda não há pedidos. Experimenta o formulário acima.</div></td></tr>';
+}
+function avalSubmit(){
+  var g=function(id){return document.getElementById(id)},msg=g('avalMsg');
+  var bad=function(t){msg.style.color='var(--bad)';msg.textContent=t;return false};
+  var plate=avPlate(g('avPlate').value),brand=g('avBrand').value,model=g('avModel').value.trim(),year=parseInt(g('avYear').value,10),km=parseInt(g('avKm').value,10);
+  var name=g('avName').value.trim(),phone=avPhone(g('avPhone').value),email=g('avEmail').value.trim();
+  if(!plate)return bad('Matrícula inválida (ex.: AB-12-CD).');
+  if(!brand||!model)return bad('Indica a marca e o modelo.');
+  var cy=new Date().getFullYear();
+  if(!(year>=1995&&year<=cy+1))return bad('Ano inválido (1995–'+(cy+1)+').');
+  if(!(km>=0&&km<=999999))return bad('Quilómetros inválidos.');
+  if(name.length<2)return bad('Indica o nome.');
+  if(!phone)return bad('Telemóvel inválido (9 dígitos).');
+  if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return bad('Email inválido.');
+  if(!g('avConsent').checked)return bad('É necessário autorizar o contacto para ver a estimativa.');
+  var o={brand:brand,year:year,km:km,fuel:g('avFuel').value,cond:g('avCond').value},est=avEstimate(o);
+  STORE.valuations=STORE.valuations||[];
+  var dup=STORE.valuations.some(function(x){return x.phone===phone&&x.plate===plate&&Date.now()-x.at<30*864e5});
+  var cust=STORE.customers.find(function(c){return avPhone(c.phone)===phone});
+  if(!cust){cust={id:uid(),name:name,email:email,phone:g('avPhone').value.trim(),city:'',notes:'Origem: Avaliador de usados'};STORE.customers.push(cust);}
+  var lead={id:uid(),customerId:cust.id,vehicleId:'',status:'Novo contacto',source:'Avaliador',notes:'Retoma: '+brand+' '+model+' '+year+', '+km+' km, '+o.fuel+', estado '+o.cond+'. Estimativa '+est.low+'–'+est.high+' €.'};
+  STORE.leads.push(lead);
+  var ow=STORE.sellers.find(function(z){return z.role==='owner'});
+  STORE.tasks.push({id:uid(),title:'Ligar a '+name+' (avaliação '+brand+' '+model+')',description:'Pedido do avaliador. Matrícula '+plate+', '+km+' km. Estimativa '+est.low+'–'+est.high+' €. Tel. '+phone+'.',vehicleId:'',assigneeId:ow?ow.id:'',dueOn:daysFromNow(1),priority:'Alta',status:'Pendente',createdAt:Date.now(),auto:true});
+  STORE.valuations.push({id:uid(),at:Date.now(),plate:plate,brand:brand,model:model,year:year,km:km,fuel:o.fuel,cond:o.cond,low:est.low,high:est.high,phone:phone,customerId:cust.id,leadId:lead.id,consent:true,consentAt:Date.now(),billable:!dup});
+  notify('Novo pedido de avaliação: '+brand+' '+model+' ('+name+')','admins',{system:true,kind:'good',link:'view:tarefas'});
+  audit('Pedido de avaliação '+plate);
+  save();renderAll();
+  msg.style.color='var(--good)';msg.textContent=dup?'Pedido repetido (já existia nos últimos 30 dias): não é faturável.':'Pedido guardado e tarefa criada.';
+  g('avalResult').innerHTML='<div class="field-note" style="font-size:13px"><strong style="font-size:18px;display:block;margin-bottom:4px">'+euro(est.low*100)+' – '+euro(est.high*100)+'</strong>Valor indicativo, sujeito a inspeção presencial, sem compromisso de compra. O stand entrará em contacto consigo.</div>';
+  ['avPlate','avModel','avYear','avKm','avName','avPhone','avEmail'].forEach(function(i){g(i).value=''});g('avConsent').checked=false;g('avBrand').value='';
+}
+document.addEventListener('click',function(e){if(e.target.closest('[data-aval-submit]')){e.preventDefault();avalSubmit();}});
+
 /* ---------------- navigation ---------------- */
-var views=['dashboard','tarefas','frota','danos','fornecedores','clientes','crm','compras','vendas','comissoes','metas','despesas','iuc','relatorios','planos','definicoes'];
-var labels={tarefas:'Tarefas',dashboard:'Dashboard',frota:'Parque Automóvel',clientes:'Clientes',crm:'Oportunidades',compras:'Compras / Retomas',vendas:'Vendas',despesas:'Despesas',relatorios:'Relatórios',definicoes:'Definições',planos:'Atualizar plano',danos:'Danos / Estado',fornecedores:'Fornecedores',comissoes:'Comissões',metas:'Metas',iuc:'IUC'};
+var views=['dashboard','tarefas','frota','danos','fornecedores','clientes','crm','compras','avaliador','vendas','comissoes','metas','despesas','iuc','relatorios','planos','definicoes'];
+var labels={tarefas:'Tarefas',dashboard:'Dashboard',frota:'Parque Automóvel',clientes:'Clientes',crm:'Oportunidades',compras:'Compras / Retomas',avaliador:'Avaliador de usados',vendas:'Vendas',despesas:'Despesas',relatorios:'Relatórios',definicoes:'Definições',planos:'Atualizar plano',danos:'Danos / Estado',fornecedores:'Fornecedores',comissoes:'Comissões',metas:'Metas',iuc:'IUC'};
 var rail=document.getElementById('rail'),scrim=document.getElementById('scrim'),menuBtn=document.getElementById('menuBtn'),crumb=document.getElementById('crumbLabel');
 function showView(name){
   if(views.indexOf(name)===-1)name='dashboard';
