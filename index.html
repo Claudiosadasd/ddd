@@ -743,7 +743,7 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
 
     <section class="view" id="v-marketplace">
       <div class="view-head"><div><h1>Marketplace entre stands</h1><p id="mkSub">Viaturas à venda de outros stands, para compra e troca entre profissionais.</p></div></div>
-      <div class="field-note" style="margin-bottom:14px">Aba partilhada entre contas: todas as contas veem todos os anúncios e os dados completos da viatura. Só a conta que publicou pode editar ou apagar o seu anúncio; as outras consultam e contactam o stand. Demonstração: a partilha funciona entre contas neste navegador; entre dispositivos precisa de servidor.</div>
+      <div class="field-note" style="margin-bottom:14px">Aba partilhada entre contas: todas as contas veem todos os anúncios e abrem a ficha completa da viatura (só consulta). Demonstração: a partilha funciona entre contas neste navegador; entre dispositivos precisa de servidor.</div>
       <div class="panel" style="margin-bottom:16px">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
           <div class="field"><label for="mkQ">Pesquisar</label><input id="mkQ" placeholder="Marca, modelo, stand…" maxlength="60" autocomplete="off"></div>
@@ -753,25 +753,6 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
         </div>
       </div>
       <div id="mkGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px"></div>
-      <div class="panel" id="mkChatPanel" style="margin-top:18px">
-        <div class="panel-head"><h3>Conversas entre stands</h3><span id="chCount"></span></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
-          <div id="chList" style="display:grid;gap:8px;align-content:start"></div>
-          <div style="grid-column:span 2;min-width:0;display:grid;gap:10px">
-            <div id="chHead" style="font-weight:750;font-size:13.5px"></div>
-            <div id="chMsgs" role="log" aria-live="polite" style="border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:12px;min-height:180px;max-height:300px;overflow:auto;display:grid;gap:8px;align-content:start"></div>
-            <div style="display:flex;gap:8px"><input id="chInput" maxlength="500" placeholder="Escreva uma mensagem sobre esta venda…" autocomplete="off" style="flex:1;font:inherit;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)" aria-label="Mensagem"><button class="btn btn-primary" type="button" data-ch-send>Enviar</button></div>
-            <div class="field-note" style="font-size:11px">Modo demonstração: as mensagens ficam guardadas neste navegador. As respostas do outro stand só chegam quando houver servidor partilhado.</div>
-          </div>
-        </div>
-      </div>
-      <div class="panel" style="margin-top:18px">
-        <div class="panel-head"><h3>Os meus anúncios</h3><span>Publique viaturas do seu parque</span></div>
-        <div class="table-wrap"><div class="t-scroll"><table>
-          <thead><tr><th>Viatura</th><th class="num">Preço</th><th>Estado</th><th class="num">Marketplace</th></tr></thead>
-          <tbody id="mkMine"></tbody>
-        </table></div></div>
-      </div>
     </section>
 
     <section class="view" id="v-avaliador">
@@ -1881,7 +1862,7 @@ function avFicha(id){
   document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:480px"><div class="modal-head"><div><span>FICHA PARA NEGOCIAR</span><h2>'+escapeHtml(l.brand+' '+l.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
    '<div style="font-size:20px;font-weight:800;margin-bottom:8px">'+euro(l.low*100)+' – '+euro(l.high*100)+' <span style="font-size:12px;font-weight:500;color:var(--muted)">estimativa</span></div>'+
    row('Matrícula',l.plate)+row('Ano',l.year)+row('Quilómetros',Number(l.km).toLocaleString('pt-PT')+' km')+row('Combustível',l.fuel)+row('Estado',l.cond)+row('Cliente',l.name)+row('Telemóvel',l.phone)+row('Email',l.email)+row('Pedido em',fmtDate(new Date(l.at).toISOString().slice(0,10)))+row('Autorização de contacto',l.consent?'Sim':'Não')+
-   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar</button>'+(tel?'<a class="btn btn-ghost" href="tel:'+escapeHtml(tel)+'">Ligar</a>':'')+'<button type="button" class="btn btn-primary" data-lead-chat="'+escapeHtml(l.id)+'">Negociar (chat)</button></div></div></div>';
+   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar</button>'+(tel?'<a class="btn btn-primary" href="tel:'+escapeHtml(tel)+'">Ligar</a>':'')+'</div></div></div>';
   var cl=function(){document.getElementById('modalRoot').innerHTML=''};
   document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
   document.getElementById('modalBackdrop').addEventListener('mousedown',function(e){if(e.target.id==='modalBackdrop')cl()});
@@ -2038,9 +2019,7 @@ function mkFicha(id){
    '<div style="font-size:22px;font-weight:800;margin-bottom:8px">'+euro(x.price*100)+'</div>'+
    row('Versão',x.version)+row('Matrícula',x.plate)+row('Ano',x.year)+row('Quilómetros',Number(x.km).toLocaleString('pt-PT')+' km')+row('Combustível',x.fuel)+row('Cor',x.color)+row('Publicado em',fmtDate(new Date(x.at).toISOString().slice(0,10)))+row('Stand',x.stand+(x.city?' · '+x.city:''))+row('Telefone do stand',x.phone)+
    (x.notes?'<p style="font-size:12.5px;color:var(--muted);margin:10px 0 0">'+escapeHtml(x.notes)+'</p>':'')+
-   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar</button>'+
-   (tel?'<a class="btn btn-ghost" href="tel:'+escapeHtml(tel)+'">Ligar</a>':'')+
-   (x.own?'<button type="button" class="btn btn-ghost" data-mk-edit="'+escapeHtml(x.lid)+'">Editar</button>':'<button type="button" class="btn btn-primary" data-mk-contact="'+escapeHtml(x.lid)+'">Contactar stand</button>')+'</div></div></div>';
+   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar ficha</button></div></div></div>';
   var cl=function(){document.getElementById('modalRoot').innerHTML=''};
   document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
   document.getElementById('modalBackdrop').addEventListener('mousedown',function(e){if(e.target.id==='modalBackdrop')cl()});
@@ -2075,7 +2054,6 @@ function mkItems(){
   return all.concat(MK_SAMPLES.map(function(x){return Object.assign({sample:true},x)}));
 }
 function renderMarketplace(){
-  chSeed();
   var q=(document.getElementById('mkQ').value||'').toLowerCase().trim(),mx=parseInt(document.getElementById('mkMax').value,10),fu=document.getElementById('mkFuel').value,so=document.getElementById('mkSort').value;
   var items=mkItems().filter(function(x){
     if(q&&(x.brand+' '+x.model+' '+x.version+' '+x.stand+' '+x.city).toLowerCase().indexOf(q)===-1)return false;
@@ -2091,14 +2069,8 @@ function renderMarketplace(){
       '<div style="font-size:12px;color:var(--muted)">'+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km · '+escapeHtml(x.fuel)+'</div>'+
       '<div style="font-size:19px;font-weight:800;margin-top:4px">'+euro(x.price*100)+'</div>'+
       '<div style="font-size:11.5px;color:var(--faint)">'+escapeHtml(x.stand)+(x.city?' · '+escapeHtml(x.city):'')+'</div></div>'+
-      '<div style="padding:0 14px 14px;display:grid;gap:8px"><button class="btn btn-ghost" type="button" data-mk-ficha="'+escapeHtml(x.id)+'" style="width:100%">Ver ficha</button>'+(x.own?'<div style="display:flex;gap:8px"><button class="btn btn-ghost" type="button" data-mk-edit="'+escapeHtml(x.id)+'" style="flex:1">✎ Editar</button><button class="btn btn-ghost" type="button" data-mk-del="'+escapeHtml(x.id)+'" style="flex:1">× Apagar</button></div>':'<button class="btn btn-primary" type="button" data-mk-contact="'+escapeHtml(x.id)+'" style="width:100%">Contactar stand</button>')+'</div></div>';
+      '<div style="padding:0 14px 14px"><button class="btn btn-primary" type="button" data-mk-ficha="'+escapeHtml(x.id)+'" style="width:100%">Abrir ficha</button></div></div>';
   }).join('')||'<div class="table-empty">Nenhuma viatura corresponde aos filtros.</div>';
-  document.getElementById('mkMine').innerHTML=STORE.vehicles.map(function(v){
-    var ok=v.status==='Disponível';
-    return '<tr><td class="cell-primary">'+escapeHtml(v.brand)+' '+escapeHtml(v.model)+'<span class="cell-sub">'+escapeHtml(v.plate||'')+'</span></td><td class="num">'+euro(v.askingCents)+'</td><td><span class="pill '+(ok?'good':'flat')+'">'+escapeHtml(v.status)+'</span></td>'+
-      '<td class="num">'+(ok?'<button class="btn '+(v.published?'btn-ghost':'btn-primary')+'" type="button" data-mk-pub="'+escapeHtml(v.id)+'">'+(v.published?'Retirar':'Publicar')+'</button>':'<span class="cell-sub">Só viaturas disponíveis</span>')+'</td></tr>';
-  }).join('')||'<tr><td colspan="4"><div class="table-empty">Sem viaturas no parque.</div></td></tr>';
-  renderChats();
 }
 document.addEventListener('click',function(e){
   var g=e.target.closest('[data-goto]');if(g){location.hash='#'+g.getAttribute('data-goto');return;}
