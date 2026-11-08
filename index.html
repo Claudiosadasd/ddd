@@ -2557,7 +2557,7 @@ function showIntro(){
     var ov=document.createElement('div');ov.className='intro';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Vídeo de apresentação Nexora');
     ov.innerHTML='<div class="intro-box"><video playsinline preload="auto">'+
       '<source src="nexora-intro.mp4" type="video/mp4"><source src="/_blob/6b88d0c22a7bdd0c9a936f4f11c7d55e" type="video/mp4"></video>'+
-      '<button type="button" class="intro-btn intro-sound" hidden>🔊 Ativar som</button>'+
+      '<button type="button" class="intro-btn intro-sound" hidden>🔇 Desativar som</button>'+
       '<button type="button" class="intro-btn intro-skip" aria-hidden="true" tabindex="-1">Saltar ›</button><div class="intro-bar"></div></div>';
     document.body.appendChild(ov);
     var v=ov.querySelector('video'),skip=ov.querySelector('.intro-skip'),snd=ov.querySelector('.intro-sound'),bar=ov.querySelector('.intro-bar'),done=false,canSkip=false;
@@ -2569,7 +2569,12 @@ function showIntro(){
     }
     var t=setTimeout(function(){canSkip=true;skip.classList.add('on');skip.removeAttribute('aria-hidden');skip.tabIndex=0;},6000);
     skip.addEventListener('click',function(){clearTimeout(t);close()});
-    snd.addEventListener('click',function(){v.muted=false;v.volume=1;snd.hidden=true;v.play().catch(function(){})});
+    function label(){snd.textContent=v.muted?'🔊 Ativar som':'🔇 Desativar som'}
+    var userMuted=false;
+    function unmute(){if(done||userMuted)return;v.muted=false;v.volume=1;v.play().catch(function(){});snd.hidden=false;label()}
+    snd.addEventListener('click',function(e){e.stopPropagation();if(v.muted){userMuted=false;v.muted=false;v.play().catch(function(){})}else{userMuted=true;v.muted=true}label()});
+    // se o browser bloquear o som automático, liga-o na primeira interação com a página
+    ['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,function h(e){document.removeEventListener(ev,h,true);if(e.target===snd||e.target===skip)return;unmute()},true)});
     document.addEventListener('keydown',function k(e){if(done){document.removeEventListener('keydown',k);return}if(e.key==='Escape'&&canSkip)close()});
     v.addEventListener('ended',close);
     v.addEventListener('timeupdate',function(){if(v.duration)bar.style.width=(v.currentTime/v.duration*100)+'%'});
@@ -2578,7 +2583,8 @@ function showIntro(){
     requestAnimationFrame(function(){ov.classList.add('show')});
     v.muted=false;
     var pr=v.play();
-    if(pr&&pr.catch)pr.catch(function(){v.muted=true;snd.hidden=false;v.play().catch(function(){snd.hidden=false})});
+    if(pr&&pr.then)pr.then(function(){snd.hidden=false;label()}).catch(function(){v.muted=true;v.play().catch(function(){})});
+    else{snd.hidden=false;label()}
     // segurança: nunca bloquear a entrada mais de 75 s
     setTimeout(close,75000);
   }catch(e){}
