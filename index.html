@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; media-src 'self' blob:; frame-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script>if(top!==self){try{top.location=self.location}catch(e){document.documentElement.style.display='none'}}</script>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
@@ -280,6 +283,7 @@ td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .goal-big{font-family:var(--mono);font-size:22px;font-weight:700;margin:6px 0 0}
 .goal-sub{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55}
 body[data-role="staff"] [data-open-form]:not([data-open-form="sale"]),body[data-role="staff"] .row-actions .icon-btn,body[data-role="staff"] .dossier-actions,body[data-role="staff"] .admin-only{display:none!important}
+body[data-role="staff"] :is([data-team-new],[data-team-edit],[data-team-toggle],[data-org-edit],[data-edit-vehicle],[data-del-vehicle],[data-edit-task],[data-del-task],[data-edit-customer],[data-del-customer],[data-edit-lead],[data-edit-cost],[data-del-cost],[data-edit-supplier],[data-del-supplier],[data-edit-damage],[data-edit-iuc],[data-del-iuc],[data-edit-target],[data-comm],[data-cancel-sale],[data-toggle-plan],[data-backup-restore],[data-cloud-save],[data-cloud-restore]){display:none!important}
 body.locked .app{display:none}
 .auth{display:none;position:fixed;inset:0;z-index:200;background:var(--surface);overflow:auto;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
 body.locked .auth{display:grid}
@@ -1268,9 +1272,10 @@ function saveSeller(v,editId){
 function changeOwnPassword(v){
   if(v.n1.length<8)return Promise.resolve('A nova palavra-passe deve ter pelo menos 8 caracteres.');
   if(v.n1!==v.n2)return Promise.resolve('As palavras-passe novas não coincidem.');
-  return hashPw(CUR_ACC.email,v.cur).then(function(h0){
+  var cur0=getAccounts().find(function(x){return x.id===CUR_ACC.id})||CUR_ACC;
+  return checkPw(cur0,CUR_ACC.email,v.cur).then(function(r0){
     var acs=getAccounts(),ac=acs.find(function(x){return x.id===CUR_ACC.id});
-    if(!ac||ac.hash!==h0)return 'Palavra-passe atual incorreta.';
+    if(!ac||!r0.ok)return 'Palavra-passe atual incorreta.';
     return hashPw(CUR_ACC.email,v.n1).then(function(h1){ac.hash=h1;putAccounts(acs);audit('Palavra-passe alterada pelo próprio');save();return '';});
   });
 }
@@ -1767,6 +1772,7 @@ document.addEventListener('click',function(e){
   if(e.target.closest('[data-co-back]')){checkout=false;renderPlanos();return;}
   var pm=e.target.closest('[data-paym]');if(pm){payMethod=pm.getAttribute('data-paym');renderPlanos();return;}
   if(e.target.closest('[data-pay]')){
+    if(!CUR_ACC||!CUR_ACC.demo){toast('A ativação do plano Pro depende da confirmação do pagamento pelo Stripe, que ainda não está ligada a este site. Contacta o suporte Nexora.','err');return;}
     var cn=document.getElementById('coName').value.trim(),cem=document.getElementById('coEmail').value.trim(),cco=document.getElementById('coCompany').value.trim();
     if(!cn){toast('Indica o teu nome.','err');return;}
     if(!/^\S+@\S+\.\S+$/.test(cem)){toast('Indica um email válido.','err');return;}
@@ -1776,7 +1782,7 @@ document.addEventListener('click',function(e){
     STORE.plan='pro';STORE.billing=selBill;STORE.sub={total:tot,method:payMethod,renews:d.toLocaleDateString('pt-PT'),name:cn,company:cco,email:cem};
     notify('O plano do stand foi alterado para Pro '+bb.n.toLowerCase()+'','sellers',{link:'view:planos'});audit('Compra do plano PRO '+bb.n.toUpperCase()+' · '+eur(tot));save();checkout=false;selBill=null;toast('Plano Pro '+bb.n.toLowerCase()+' ativo.','ok');renderAll();return;
   }
-  var tp=e.target.closest('[data-toggle-plan]');if(tp){var to=STORE.plan==='pro'?'free':'pro';askConfirm('Mudar para o plano '+(to==='pro'?'Pro ('+billLabel()+', até 50 viaturas e 15 vendedores)':'Free (até 10 viaturas e 2 vendedores)')+'? Um downgrade nunca apaga dados; apenas impede novas entradas acima do limite.',function(){STORE.plan=to;notify('O plano do stand foi alterado para '+(to==='pro'?'Pro':'Free'),'sellers',{link:'view:definicoes'});audit('Plano alterado para '+to.toUpperCase());save();toast('Plano alterado para '+to.toUpperCase()+'.','ok');renderAll();},'Mudar plano');return;}
+  var tp=e.target.closest('[data-toggle-plan]');if(tp){var to=STORE.plan==='pro'?'free':'pro';if(to==='pro'&&(!CUR_ACC||!CUR_ACC.demo)){toast('Só é possível subir para o plano Pro depois de o pagamento ser confirmado pelo Stripe.','err');return;}askConfirm('Mudar para o plano '+(to==='pro'?'Pro ('+billLabel()+', até 50 viaturas e 15 vendedores)':'Free (até 10 viaturas e 2 vendedores)')+'? Um downgrade nunca apaga dados; apenas impede novas entradas acima do limite.',function(){STORE.plan=to;notify('O plano do stand foi alterado para '+(to==='pro'?'Pro':'Free'),'sellers',{link:'view:definicoes'});audit('Plano alterado para '+to.toUpperCase());save();toast('Plano alterado para '+to.toUpperCase()+'.','ok');renderAll();},'Mudar plano');return;}
   var openBtn=e.target.closest('[data-open-form]');
   if(openBtn){openForm(openBtn.getAttribute('data-open-form'));return;}
 
@@ -1966,18 +1972,41 @@ function purgeFiles(pred){
 }
 function extOf(f){
   var e=fileExt(f.name);if(FILE_EXT.indexOf(e)>-1)return e;
+  if(e)return '';
   var m={'image/jpeg':'jpg','image/jpg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','image/heic':'heic','image/heif':'heif','application/pdf':'pdf','application/msword':'doc','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'docx','application/vnd.ms-excel':'xls','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'xlsx','text/csv':'csv','text/plain':'txt'};
-  return m[String(f.type||'').toLowerCase()]||e;
+  return m[String(f.type||'').toLowerCase()]||'';
 }
 function shrinkImage(file){return new Promise(function(res){var url=URL.createObjectURL(file),img=new Image();img.onload=function(){try{var k=Math.min(1,2400/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*k));c.height=Math.max(1,Math.round(img.height*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(function(b){URL.revokeObjectURL(url);res(b)},'image/jpeg',.85)}catch(e){URL.revokeObjectURL(url);res(null)}};img.onerror=function(){URL.revokeObjectURL(url);res(null)};img.src=url})}
+/* verifica a assinatura binária do ficheiro contra a extensão declarada */
+function sniffOk(blob,ext){
+  return new Promise(function(res){
+    var r=new FileReader();
+    r.onload=function(){
+      var u=new Uint8Array(r.result),hx=function(i,n){return Array.prototype.map.call(u.subarray(i,i+n),function(x){return ('0'+x.toString(16)).slice(-2)}).join('')},ok=false;
+      if(ext==='jpg'||ext==='jpeg')ok=hx(0,3)==='ffd8ff';
+      else if(ext==='png')ok=hx(0,8)==='89504e470d0a1a0a';
+      else if(ext==='gif')ok=hx(0,4)==='47494638';
+      else if(ext==='webp')ok=hx(0,4)==='52494646'&&hx(8,4)==='57454250';
+      else if(ext==='heic'||ext==='heif')ok=hx(4,4)==='66747970';
+      else if(ext==='pdf')ok=hx(0,4)==='25504446';
+      else if(ext==='docx'||ext==='xlsx')ok=hx(0,4)==='504b0304';
+      else if(ext==='doc'||ext==='xls')ok=hx(0,8)==='d0cf11e0a1b11ae1';
+      else if(ext==='csv'||ext==='txt')ok=u.indexOf(0)===-1;
+      res(ok);
+    };
+    r.onerror=function(){res(false)};
+    r.readAsArrayBuffer(blob.slice(0,16384));
+  });
+}
 function addFiles(type,id,cat,list){
   var files=Array.prototype.slice.call(list||[]);if(!files.length)return Promise.resolve();
   if(!canUpload(type,cat)){toast('Sem permissão para carregar este tipo de ficheiro.','err');return Promise.resolve();}
   toast('A carregar '+files.length+' ficheiro(s)…','warn');
   var done=0,bad=[],firstImg='',usedNow=usedBytes(),late=[];
-  return files.reduce(function(p,f){return p.then(function(){
+  return Promise.all(files.map(function(f){return sniffOk(f,extOf(f))})).then(function(okArr){return files.reduce(function(p,f,idx){return p.then(function(){
     var ext=extOf(f),nm=f.name||('ficheiro-'+Date.now());
     if(FILE_EXT.indexOf(ext)===-1){bad.push(nm+' (tipo não permitido)');return}
+    if(!okArr[idx]){bad.push(nm+' (o conteúdo não corresponde ao tipo do ficheiro)');return}
     if(fileExt(nm)!==ext)nm+='.'+ext;
     var isImg=IMG_EXT.indexOf(ext)>-1;
     return (isImg&&f.size>2097152?withTimeout(shrinkImage(f),20000).catch(function(){return null}):Promise.resolve(null)).then(function(sh){
@@ -2001,7 +2030,7 @@ function addFiles(type,id,cat,list){
         });
       });
     });
-  })},Promise.resolve()).then(function(){
+  })},Promise.resolve())}).then(function(){
     late.forEach(function(x){cloudUpload(x[1]).then(function(r){if(r){x[0].cloud=r;save();renderCloudStatus()}})});
     if(done){
       var vid=vehicleOf(type,id),v=findVehicle(vid);
@@ -2263,7 +2292,7 @@ document.addEventListener('click',function(e){
   if(t.closest('[data-backup-copy]')){if(!isAdmin())return;var js=JSON.stringify(STORE);copyText(js,'Cópia de segurança copiada. Guarda o texto num sítio seguro.','Cópia de segurança','nexora-backup.json','application/json');return;}
   if(t.closest('[data-backup-restore]')){if(!isAdmin())return;document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:560px"><div class="modal-head"><div><span>CÓPIA DE SEGURANÇA</span><h2>Restaurar dados</h2></div><button id="modalClose" aria-label="Fechar">×</button></div><div style="padding:18px 24px 22px"><p class="rgpd-note" style="margin:0 0 10px">Cola o texto da cópia. Isto substitui todos os dados atuais deste stand.</p><textarea id="bkText" rows="7" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px;font:12px var(--mono)"></textarea><div class="modal-error" id="bkErr" hidden></div><div class="modal-actions" style="padding:14px 0 0"><button type="button" class="btn btn-ghost" id="bkCancel">Cancelar</button><button type="button" class="btn btn-primary" data-backup-apply>Restaurar</button></div></div></div></div>';document.getElementById('modalClose').onclick=closeForm;document.getElementById('bkCancel').onclick=closeForm;return;}
   if(t.closest('[data-backup-apply]')){if(!isAdmin())return;var err=document.getElementById('bkErr'),d;try{d=JSON.parse(document.getElementById('bkText').value)}catch(e2){d=null}
-    if(!d||!Array.isArray(d.vehicles)||!Array.isArray(d.sellers)||!d.sellers.length||!d.sellers.some(function(z){return z.role==='owner'})){err.textContent='Texto inválido: não parece uma cópia de segurança NEXORA.';err.hidden=false;return;}
+    if(!d||!Array.isArray(d.vehicles)||!Array.isArray(d.sellers)||!d.sellers.length||!d.sellers.every(function(z){return z&&typeof z==='object'})||!d.sellers.some(function(z){return z.role==='owner'})||['vehicles','sellers','customers','sales','costs','damages','iuc','suppliers','tasks','files','notifications','vlogs','leads','targets','activity','audit'].some(function(k){return d[k]!==undefined&&!Array.isArray(d[k])})){err.textContent='Texto inválido: não parece uma cópia de segurança NEXORA.';err.hidden=false;return;}
     var meOld=STORE.me;STORE=d;if(!STORE.sellers.some(function(z){return z.id===meOld}))STORE.me=STORE.sellers.find(function(z){return z.role==='owner'}).id;else STORE.me=meOld;
     ensureFeat();audit('Dados restaurados a partir de cópia de segurança');save();closeForm();renderAll();toast('Dados restaurados.','ok');return;}
 });
@@ -2278,6 +2307,7 @@ function cloudGet(k){var m=cloudMeta(k);if(!m||!m.cloud||!m.cloud.url)return Pro
 function cloudDel(k){if(String(k).indexOf('th:')===0||!CLOUD.assets)return;var m=cloudMeta(k);if(m&&m.cloud&&m.cloud.id){try{CLOUD.assets.delete(m.cloud.id).catch(function(){})}catch(e){}}}
 function dbKey(){return String((CUR_ACC&&CUR_ACC.dataKey)||STORAGE_KEY||'nexora').replace(/[^A-Za-z0-9_-]/g,'_').slice(0,120)}
 function renderCloudStatus(){
+  document.querySelectorAll('[data-cloud-save],[data-cloud-restore]').forEach(function(b){b.disabled=!CLOUD.db;b.title=CLOUD.db?'':'Disponível quando a base de dados estiver ligada'});
   var el=document.getElementById('cloudStatus');if(!el)return;
   var nf=STORE&&STORE.files?STORE.files.filter(function(f){return f.cloud}).length:0;
   if(!CLOUD.db&&!CLOUD.assets){el.textContent='Sem ligação neste momento: os dados ficam só neste navegador.';return;}
@@ -2307,7 +2337,7 @@ function cloudRestore(){
   }).catch(function(){toast('Não foi possível ler a base de dados.','err')});
 }
 function initCloud(){
-  try{if(!window.claude||!claude.use)return;
+  try{if(!window.claude||!claude.use){renderCloudStatus();return}
     claude.use('assets').then(function(a){CLOUD.assets=a||null;renderCloudStatus()}).catch(function(){});
     claude.use('db').then(function(d){CLOUD.db=d||null;renderCloudStatus();if(CLOUD.db&&STORE)scheduleSync()}).catch(function(){});
   }catch(e){}
@@ -2458,12 +2488,38 @@ function recordTerms(acc){
 var ACC_KEY='nexora-accounts-v1',SESS_KEY='nexora-session-v1',memAcc=null,memSess=null;
 function getAccounts(){try{var r=localStorage.getItem(ACC_KEY);if(r)return JSON.parse(r)}catch(e){}return memAcc||[]}
 function putAccounts(a){memAcc=a;try{localStorage.setItem(ACC_KEY,JSON.stringify(a))}catch(e){}}
-function getSession(){try{return localStorage.getItem(SESS_KEY)||memSess}catch(e){return memSess}}
+function getSession(){if(sessionExpired()){putSession(null);return null}try{return localStorage.getItem(SESS_KEY)||memSess}catch(e){return memSess}}
 function putSession(v){memSess=v;try{if(v)localStorage.setItem(SESS_KEY,v);else localStorage.removeItem(SESS_KEY)}catch(e){}}
+var PBKDF2_ITER=310000;
+function hexOf(buf){return Array.from(new Uint8Array(buf)).map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('')}
+function fromHex(h){var a=new Uint8Array(h.length/2);for(var i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a}
+function cryptoOk(){return !!(window.crypto&&crypto.subtle&&crypto.getRandomValues)}
+function legacyHash(email,pw){return crypto.subtle.digest('SHA-256',new TextEncoder().encode('nx1|'+email+'|'+pw)).then(hexOf)}
+function pbkdf2(pw,salt,iter){return crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']).then(function(k){return crypto.subtle.deriveBits({name:'PBKDF2',salt:salt,iterations:iter,hash:'SHA-256'},k,256)}).then(hexOf)}
+/* formato atual: v2:<iterações>:<sal hex>:<hash hex>  (sal aleatório por conta) */
 function hashPw(email,pw){
-  try{return crypto.subtle.digest('SHA-256',new TextEncoder().encode('nx1|'+email+'|'+pw)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('')})}
-  catch(e){return Promise.resolve('p:'+btoa(unescape(encodeURIComponent(pw))))}
+  if(!cryptoOk())return Promise.reject(new Error('crypto'));
+  var salt=crypto.getRandomValues(new Uint8Array(16));
+  return pbkdf2(pw,salt,PBKDF2_ITER).then(function(h){return 'v2:'+PBKDF2_ITER+':'+hexOf(salt)+':'+h});
 }
+/* devolve {ok, upgrade}; contas antigas (SHA-256) são aceites e migradas no login */
+function checkPw(acc,email,pw){
+  if(!cryptoOk())return Promise.reject(new Error('crypto'));
+  var st=String(acc.hash||'');
+  if(st.indexOf('v2:')===0){var p=st.split(':');return pbkdf2(pw,fromHex(p[2]),+p[1]).then(function(h){return {ok:h===p[3],upgrade:false}})}
+  return legacyHash(email,pw).then(function(h){return {ok:h===st,upgrade:h===st}});
+}
+/* ---- limite de tentativas de login (por email, neste navegador) ---- */
+var LOCK_KEY='nexora-login-lock-v1';
+function lockMap(){try{return JSON.parse(localStorage.getItem(LOCK_KEY)||'{}')}catch(e){return {}}}
+function lockSave(m){try{localStorage.setItem(LOCK_KEY,JSON.stringify(m))}catch(e){}}
+function loginLockLeft(email){var m=lockMap()[email];if(!m||!m.until)return 0;var left=Math.ceil((m.until-Date.now())/1000);return left>0?left:0}
+function loginFail(email){var m=lockMap(),e=m[email]||{n:0};e.n=(e.n||0)+1;if(e.n>=5)e.until=Date.now()+Math.min(900000,30000*Math.pow(2,e.n-5));m[email]=e;lockSave(m)}
+function loginReset(email){var m=lockMap();delete m[email];lockSave(m)}
+/* ---- sessão: expira após 30 min sem atividade ---- */
+var IDLE_MS=30*60*1000,SEEN_KEY='nexora-seen-v1',lastTouch=0;
+function touchSeen(){var n=Date.now();if(n-lastTouch<10000)return;lastTouch=n;try{localStorage.setItem(SEEN_KEY,String(n))}catch(e){}}
+function sessionExpired(){try{var t=+localStorage.getItem(SEEN_KEY)||0;return !!t&&Date.now()-t>IDLE_MS}catch(e){return false}}
 function ensureDemo(){
   var defs=[{id:'demo',email:'demo@nexora.pt',name:'João Silva',stand:'Auto Norte, Lda.',pw:'Demo2026!',demo:true,role:'owner'},{id:'demo-s2',email:'marta.rocha@nexora.pt',name:'Marta Rocha',pw:'Vendedor2026!',demo:true,role:'staff'},{id:'demo-s3',email:'tiago.lopes@nexora.pt',name:'Tiago Lopes',pw:'Vendedor2026!',demo:true,role:'staff'}];
   var a=getAccounts(),todo=defs.filter(function(d){return !a.some(function(x){return x.email===d.email})});
@@ -2480,7 +2536,7 @@ function showAuth(tab){
 var pendingAcc=null;
 function enterApp(acc,welcome,skipTerms){
   if(!skipTerms&&(!acc.terms||acc.terms.version!==TERMS_VERSION)){pendingAcc={acc:acc,welcome:welcome};showLegal('termos','accept');return;}
-  CUR_ACC=acc;STORAGE_KEY=acc.dataKey;putSession(acc.email);
+  CUR_ACC=acc;STORAGE_KEY=acc.dataKey;putSession(acc.email);lastTouch=0;touchSeen();
   load();purgeDemoFiles(false);
   if(acc.role==='staff'){
     var sl2=STORE.sellers.find(function(x){return x.email===acc.email});
@@ -2495,6 +2551,8 @@ function enterApp(acc,welcome,skipTerms){
   renderAll();showView(location.hash.slice(1)||'dashboard');window.scrollTo(0,0);
   if(welcome)toast('Conta criada · plano Free · até 10 viaturas ativas.','ok');
 }
+['pointerdown','keydown','touchstart','scroll'].forEach(function(ev){document.addEventListener(ev,function(){if(CUR_ACC)touchSeen()},{passive:true,capture:true})});
+setInterval(function(){if(CUR_ACC&&sessionExpired()){logout();toast('Sessão terminada por inatividade (30 min).','warn')}},60000);
 function logout(){
   putSession(null);CUR_ACC=null;STORE=null;location.hash='';
   document.getElementById('loginPass').value='';
@@ -2515,11 +2573,20 @@ document.getElementById('formLogin').addEventListener('submit',function(e){
   e.preventDefault();
   var email=document.getElementById('loginEmail').value.trim().toLowerCase(),pass=document.getElementById('loginPass').value,err=document.getElementById('loginErr');
   if(!email||!pass){err.textContent='Indica o email e a palavra-passe.';return;}
-  ensureDemo().then(function(){return hashPw(email,pass)}).then(function(h){
-    var acc=getAccounts().find(function(x){return x.email===email&&x.hash===h});
-    if(!acc){err.textContent='Email ou palavra-passe incorretos.';return;}
-    enterApp(acc,false);
-  });
+  var wait=loginLockLeft(email);
+  if(wait>0){err.textContent='Demasiadas tentativas. Tenta novamente em '+wait+' s.';return;}
+  ensureDemo().then(function(){
+    var acc=getAccounts().find(function(x){return x.email===email});
+    if(!acc)return {ok:false};
+    return checkPw(acc,email,pass).then(function(r){
+      if(!r.ok)return {ok:false};
+      if(!r.upgrade)return {ok:true,acc:acc};
+      return hashPw(email,pass).then(function(h){acc.hash=h;putAccounts(getAccounts().map(function(x){return x.email===email?acc:x}));return {ok:true,acc:acc}});
+    });
+  }).then(function(r){
+    if(!r||!r.ok){loginFail(email);err.textContent='Email ou palavra-passe incorretos.';return;}
+    loginReset(email);enterApp(r.acc,false);
+  }).catch(function(){err.textContent='Não foi possível verificar a palavra-passe neste navegador. Confirma que o site é aberto em HTTPS.';});
 });
 function syncReg(){document.getElementById('regSubmit').disabled=!(document.getElementById('regTerms').checked&&document.getElementById('regPro').checked)}
 document.getElementById('regTerms').addEventListener('change',syncReg);document.getElementById('regPro').addEventListener('change',syncReg);
@@ -2538,7 +2605,7 @@ document.getElementById('formRegister').addEventListener('submit',function(e){
       var id=uid(),acc={id:id,email:email,name:name,stand:stand,hash:h,dataKey:'nexora-acc-'+id,demo:false,terms:{version:TERMS_VERSION,at:new Date().toISOString(),professional:true}};
       var a=getAccounts();a.push(acc);putAccounts(a);enterApp(acc,true,true);
     });
-  });
+  }).catch(function(){err.textContent='Não foi possível criar a conta neste navegador. Confirma que o site é aberto em HTTPS.';});
 });
 
 /* ---------------- 3D tilt on pointer ---------------- */
@@ -2600,7 +2667,7 @@ document.body.classList.add('locked');
 ensureDemo().then(function(){
   var em=getSession(),acc=em&&getAccounts().find(function(x){return x.email===em});
   if(acc)enterApp(acc,false);else{showAuth('login');showIntro();}
-});
+}).catch(function(){showAuth('login');showIntro();document.getElementById('loginErr').textContent='Não foi possível iniciar a aplicação neste navegador.'});
 })();
 </script>
 
