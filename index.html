@@ -752,7 +752,7 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
           <div class="field"><label for="avPhone">Telemóvel <span class="req">*</span></label><input id="avPhone" inputmode="tel" maxlength="16" placeholder="912 345 678" autocomplete="off"></div>
           <div class="field"><label for="avEmail">Email</label><input id="avEmail" type="email" maxlength="80" autocomplete="off"></div>
           <div class="field full" style="grid-column:1/-1"><label style="display:flex;gap:8px;align-items:flex-start;font-weight:500"><input id="avConsent" type="checkbox" style="width:auto;margin-top:3px"> Autorizo o stand a contactar-me sobre esta avaliação e a tratar os meus dados para esse fim.</label></div>
-          <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" type="button" data-aval-submit>Ver estimativa</button><span id="avalMsg" role="status" style="font-size:12.5px"></span></div>
+          <div style="grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" type="button" data-aval-submit>Ver estimativa</button><button class="btn btn-ghost" type="button" data-aval-example>Preencher exemplo</button><span id="avalMsg" role="status" style="font-size:12.5px"></span></div>
         </div>
         <div id="avalResult" style="margin-top:14px"></div>
       </div>
@@ -1787,7 +1787,32 @@ function avPlate(raw){
   return /^([A-Z]{2}-\d{2}-\d{2}|\d{2}-[A-Z]{2}-\d{2}|\d{2}-\d{2}-[A-Z]{2}|[A-Z]{2}-\d{2}-[A-Z]{2})$/.test(p)?p:'';
 }
 function avPhone(raw){var t=String(raw||'').replace(/[\s.-]/g,'').replace(/^(\+|00)351/,'');return /^[29]\d{8}$/.test(t)?t:''}
+var AV_EX=[
+ {plate:'45-QR-12',brand:'Volkswagen',model:'Golf 1.6 TDI',year:2018,km:142000,fuel:'Diesel',cond:'Bom',name:'Ana Ribeiro',phone:'917 222 333',email:'ana.ribeiro@exemplo.pt'},
+ {plate:'AB-34-CD',brand:'BMW',model:'320d',year:2020,km:88000,fuel:'Diesel',cond:'Excelente',name:'Carlos Mendes',phone:'926 111 444',email:'carlos.mendes@exemplo.pt'},
+ {plate:'67-12-ZX',brand:'Renault',model:'Clio 1.0 TCe',year:2016,km:176000,fuel:'Gasolina',cond:'Razoável',name:'Sofia Teixeira',phone:'936 555 777',email:''},
+ {plate:'GH-56-IJ',brand:'Toyota',model:'Yaris Hybrid',year:2021,km:54000,fuel:'Híbrido',cond:'Bom',name:'Rui Carvalho',phone:'914 888 999',email:'rui.carvalho@exemplo.pt'}
+];
+var avExIdx=3;
+function avSeed(){
+  if(STORE.valuations||!CUR_ACC||!CUR_ACC.demo)return;
+  STORE.valuations=[];
+  AV_EX.slice(0,3).forEach(function(x,i){
+    var cust=STORE.customers.find(function(c){return avPhone(c.phone)===avPhone(x.phone)});
+    if(!cust){cust={id:uid(),name:x.name,email:x.email,phone:x.phone,city:'',notes:'Origem: Avaliador de usados (exemplo)'};STORE.customers.push(cust);}
+    var est=avEstimate(x);
+    STORE.valuations.push({id:uid(),at:Date.now()-(i+1)*864e5*2,plate:x.plate,brand:x.brand,model:x.model,year:x.year,km:x.km,fuel:x.fuel,cond:x.cond,low:est.low,high:est.high,phone:avPhone(x.phone),customerId:cust.id,leadId:'',consent:true,consentAt:Date.now(),billable:true,example:true});
+  });
+  save();
+}
+function avFillExample(){
+  var x=AV_EX[avExIdx%AV_EX.length];avExIdx++;
+  var g=function(id){return document.getElementById(id)};
+  g('avPlate').value=x.plate;g('avBrand').value=x.brand;g('avModel').value=x.model;g('avYear').value=x.year;g('avKm').value=x.km;g('avFuel').value=x.fuel;g('avCond').value=x.cond;g('avName').value=x.name;g('avPhone').value=x.phone;g('avEmail').value=x.email;g('avConsent').checked=true;
+  g('avalMsg').style.color='var(--muted)';g('avalMsg').textContent='Exemplo preenchido: carrega em "Ver estimativa".';g('avalResult').innerHTML='';
+}
 function renderAvaliador(){
+  avSeed();
   var sel=document.getElementById('avBrand');
   if(sel&&!sel.options.length){var all=[].concat(AV_BRANDS.premium,AV_BRANDS.medio,AV_BRANDS.economico).sort(function(a,b){return a==='Outra'?1:b==='Outra'?-1:a.localeCompare(b,'pt')});sel.innerHTML='<option value="">Escolher…</option>'+all.map(function(b){return '<option>'+escapeHtml(b)+'</option>'}).join('');}
   var list=(STORE.valuations||[]).slice().sort(function(a,b){return b.at-a.at});
@@ -1797,7 +1822,7 @@ function renderAvaliador(){
   var b=document.getElementById('bubble-avaliador');if(b)b.textContent=list.length||'';
   document.getElementById('avalBody').innerHTML=list.map(function(x){
     var c=findCustomer(x.customerId);
-    return '<tr><td>'+fmtDate(new Date(x.at).toISOString().slice(0,10))+'</td><td class="cell-primary">'+escapeHtml(c?c.name:'—')+'<span class="cell-sub">'+escapeHtml(c?c.phone:'')+'</span></td>'+
+    return '<tr><td>'+fmtDate(new Date(x.at).toISOString().slice(0,10))+'</td><td class="cell-primary">'+escapeHtml(c?c.name:'—')+(x.example?' <span class="pill flat">exemplo</span>':'')+'<span class="cell-sub">'+escapeHtml(c?c.phone:'')+'</span></td>'+
       '<td>'+escapeHtml(x.brand)+' '+escapeHtml(x.model)+'<span class="cell-sub">'+escapeHtml(x.plate)+' · '+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km</span></td>'+
       '<td class="num">'+euro(x.low*100)+' – '+euro(x.high*100)+'</td><td>'+(x.consent?'<span class="pill good">Autorizado</span>':'<span class="pill flat">—</span>')+'</td>'+
       '<td>'+(x.billable?'<span class="pill good">Sim</span>':'<span class="pill warn">Duplicado</span>')+'</td></tr>';
@@ -1834,7 +1859,7 @@ function avalSubmit(){
   g('avalResult').innerHTML='<div class="field-note" style="font-size:13px"><strong style="font-size:18px;display:block;margin-bottom:4px">'+euro(est.low*100)+' – '+euro(est.high*100)+'</strong>Valor indicativo, sujeito a inspeção presencial, sem compromisso de compra. O stand entrará em contacto consigo.</div>';
   ['avPlate','avModel','avYear','avKm','avName','avPhone','avEmail'].forEach(function(i){g(i).value=''});g('avConsent').checked=false;g('avBrand').value='';
 }
-document.addEventListener('click',function(e){if(e.target.closest('[data-aval-submit]')){e.preventDefault();avalSubmit();}});
+document.addEventListener('click',function(e){if(e.target.closest('[data-aval-submit]')){e.preventDefault();avalSubmit();}else if(e.target.closest('[data-aval-example]')){e.preventDefault();avFillExample();}});
 
 /* ---------------- navigation ---------------- */
 var views=['dashboard','tarefas','frota','danos','fornecedores','clientes','crm','compras','avaliador','vendas','comissoes','metas','despesas','iuc','relatorios','planos','definicoes'];
