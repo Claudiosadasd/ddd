@@ -400,6 +400,11 @@ body.locked .auth{display:grid}
 .np-empty{padding:30px 18px;text-align:center;color:var(--faint);font-size:12.5px;line-height:1.5}
 .vlink{color:var(--accent-ink);font-weight:700;text-decoration:none;border-bottom:1px dotted currentColor}
 .dossier-cover{height:132px;background:var(--surface);display:grid;place-items:center;overflow:hidden;cursor:pointer;color:var(--faint);font-size:11px;border-bottom:1px solid var(--line)}
+.dossier-cover,.dsr-cover{position:relative}
+.brand-badge{position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:6px;background:rgba(15,23,42,.84);color:#fff;border-radius:999px;padding:3px 10px 3px 3px;font-size:10.5px;font-weight:750;letter-spacing:.02em;z-index:2;pointer-events:none;max-width:calc(100% - 16px)}
+.brand-badge i{font-style:normal;width:20px;height:20px;border-radius:50%;background:#fff;color:#0f172a;display:grid;place-items:center;font-size:9px;font-weight:800;flex:none;overflow:hidden}
+.brand-badge i img{width:100%;height:100%;object-fit:contain;display:block}
+.brand-badge b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:750}
 .dossier-cover img{width:100%;height:100%;object-fit:cover;display:block}
 .dossier-open{margin-top:12px;width:100%;justify-content:center;font-size:12px;padding:8px}
 /* dossiê */
@@ -748,6 +753,18 @@ body:not(.is-demo) .acc-demo-only{display:none!important}
         </div>
       </div>
       <div id="mkGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px"></div>
+      <div class="panel" id="mkChatPanel" style="margin-top:18px">
+        <div class="panel-head"><h3>Conversas entre stands</h3><span id="chCount"></span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+          <div id="chList" style="display:grid;gap:8px;align-content:start"></div>
+          <div style="grid-column:span 2;min-width:0;display:grid;gap:10px">
+            <div id="chHead" style="font-weight:750;font-size:13.5px"></div>
+            <div id="chMsgs" role="log" aria-live="polite" style="border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:12px;min-height:180px;max-height:300px;overflow:auto;display:grid;gap:8px;align-content:start"></div>
+            <div style="display:flex;gap:8px"><input id="chInput" maxlength="500" placeholder="Escreva uma mensagem sobre esta venda…" autocomplete="off" style="flex:1;font:inherit;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)" aria-label="Mensagem"><button class="btn btn-primary" type="button" data-ch-send>Enviar</button></div>
+            <div class="field-note" style="font-size:11px">Modo demonstração: as mensagens ficam guardadas neste navegador. As respostas do outro stand só chegam quando houver servidor partilhado.</div>
+          </div>
+        </div>
+      </div>
       <div class="panel" style="margin-top:18px">
         <div class="panel-head"><h3>Os meus anúncios</h3><span>Publique viaturas do seu parque</span></div>
         <div class="table-wrap"><div class="t-scroll"><table>
@@ -1131,6 +1148,13 @@ FORMS.org={title:'dados do stand',resource:'_org',fields:[{k:'name',l:'Nome do s
 FORMS.password={title:'palavra-passe',resource:'_password',submit:'Alterar palavra-passe',fields:[{k:'cur',l:'Palavra-passe atual',type:'password',req:true},{k:'n1',l:'Nova palavra-passe (mín. 8)',type:'password',req:true},{k:'n2',l:'Repetir nova palavra-passe',type:'password',req:true}]};
 var REF_LABEL={vehicles:function(v){return v?(v.brand+' '+v.model):'—'},customers:function(c){return c?c.name:'—'},suppliers:function(x){return x?x.name:'—'},sellers:function(x){return x?x.name:'—'}};
 var cancelTargetId=null;
+var BRAND_LOGOS={};/* marca -> ficheiro de logótipo fornecido pelo utilizador (ex.: {'BMW':'logos/bmw.svg'}) */
+function brandMono(b){var w=String(b||'?').replace(/[^A-Za-zÀ-ÿ0-9 -]/g,'').split(/[\s-]+/).filter(Boolean);return (w.length>1?w[0][0]+w[1][0]:String(w[0]||'?').slice(0,2)).toUpperCase()}
+function brandBadge(b){
+  if(!b)return '';
+  var u=BRAND_LOGOS[b];
+  return '<span class="brand-badge" title="'+escapeHtml(b)+'"><i>'+(u?'<img src="'+escapeHtml(u)+'" alt="">':escapeHtml(brandMono(b)))+'</i><b>'+escapeHtml(b)+'</b></span>';
+}
 function vehicleLabel(v){return v?(v.brand+' '+v.model):'—'}
 function customerLabel(c){return c?c.name:'—'}
 function findVehicle(id){return STORE.vehicles.find(function(v){return v.id===id})}
@@ -1470,7 +1494,7 @@ function renderFrota(){
   document.getElementById('fleetGrid').innerHTML=vehicles.map(function(v){
     var pillClass=v.status==='Disponível'?'good':v.status==='Reservada'?'warn':'flat';
     var margin=v.askingCents&&v.purchaseCents?(((v.askingCents-v.purchaseCents)/v.askingCents)*100):0;
-    return '<article class="dossier">'+'<div class="dossier-cover" data-dossier="'+v.id+'">'+(v.coverFileId?'<img data-th="'+v.coverFileId+'" alt="">':'<span>Sem fotografia · abrir dossiê</span>')+'</div>'+
+    return '<article class="dossier">'+'<div class="dossier-cover" data-dossier="'+v.id+'">'+(v.coverFileId?'<img data-th="'+v.coverFileId+'" alt="">':'<span>Sem fotografia · abrir dossiê</span>')+brandBadge(v.brand)+'</div>'+
       '<div class="dossier-strip fuel-'+escapeHtml(v.fuel||'Diesel')+'"></div>'+
       '<div class="dossier-body">'+
         '<div class="dossier-top"><div><h4>'+escapeHtml(v.brand)+' '+escapeHtml(v.model)+'</h4><span>'+escapeHtml(v.version||'')+'</span></div><span class="pill '+pillClass+'">'+escapeHtml(v.status)+'</span></div>'+
@@ -1919,6 +1943,55 @@ function avalSubmit(){
 document.addEventListener('click',function(e){if(e.target.closest('[data-aval-submit]')){e.preventDefault();avalSubmit();}else if(e.target.closest('[data-aval-example]')){e.preventDefault();avFillExample();}});
 
 /* ---------------- Marketplace entre stands (demo) ---------------- */
+var chActive='';
+function chSeed(){
+  if(STORE.chats||!CUR_ACC||!CUR_ACC.demo)return;
+  var now=Date.now(),v=STORE.vehicles.find(function(x){return x.status==='Disponível'})||STORE.vehicles[0];
+  var lab=v?v.brand+' '+v.model:'BMW Série 3';
+  STORE.chats=[{id:uid(),listingId:'example',listingLabel:lab,stand:'Stand Douro Motors',example:true,msgs:[
+    {id:uid(),at:now-36e5*5,from:'them',by:'Stand Douro Motors',text:'Boa tarde! O '+lab+' ainda está disponível? Aceitam retoma de um Audi A3 de 2017?'},
+    {id:uid(),at:now-36e5*4,from:'me',by:'Auto Norte',text:'Boa tarde, sim está disponível. Podemos avaliar a retoma, envie-nos fotos e quilómetros.'},
+    {id:uid(),at:now-36e5*3,from:'them',by:'Stand Douro Motors',text:'Perfeito, envio hoje. Conseguem reservar até sexta?'}]}];
+  save();
+}
+function chOpen(listingId,label,stand){
+  STORE.chats=STORE.chats||[];
+  var c=STORE.chats.find(function(x){return x.listingId===listingId});
+  if(!c){c={id:uid(),listingId:listingId,listingLabel:label,stand:stand,msgs:[]};STORE.chats.push(c);save();}
+  chActive=c.id;renderChats();
+  var pn=document.getElementById('mkChatPanel');if(pn)pn.scrollIntoView({block:'center',behavior:'smooth'});
+  var i=document.getElementById('chInput');if(i)i.focus();
+}
+function renderChats(){
+  var list=STORE.chats||[];
+  if(!list.some(function(c){return c.id===chActive}))chActive=list.length?list[0].id:'';
+  document.getElementById('chCount').textContent=list.length+(list.length===1?' conversa':' conversas');
+  document.getElementById('chList').innerHTML=list.map(function(c){
+    var last=c.msgs[c.msgs.length-1];
+    return '<button type="button" class="btn '+(c.id===chActive?'btn-primary':'btn-ghost')+'" data-ch-open="'+escapeHtml(c.id)+'" style="text-align:left;display:block;white-space:normal"><strong>'+escapeHtml(c.stand)+'</strong>'+(c.example?' <small>(exemplo)</small>':'')+'<br><small>'+escapeHtml(c.listingLabel)+'</small>'+(last?'<br><small style="opacity:.8">'+escapeHtml(last.text.slice(0,40))+(last.text.length>40?'…':'')+'</small>':'')+'</button>';
+  }).join('')||'<div class="table-empty">Sem conversas. Carregue em "Contactar stand" num anúncio.</div>';
+  var c=list.find(function(x){return x.id===chActive}),box=document.getElementById('chMsgs');
+  document.getElementById('chHead').innerHTML=c?escapeHtml(c.stand)+' · '+escapeHtml(c.listingLabel)+' <button type="button" class="btn btn-ghost" data-ch-del="'+escapeHtml(c.id)+'" aria-label="Apagar conversa" style="float:right">× Apagar conversa</button>':'Nenhuma conversa selecionada';
+  box.innerHTML=c?(c.msgs.map(function(m){
+    var mine=m.from==='me';
+    return '<div style="justify-self:'+(mine?'end':'start')+';max-width:80%;background:'+(mine?'var(--accent)':'var(--card)')+';color:'+(mine?'#fff':'var(--ink)')+';border:1px solid '+(mine?'transparent':'var(--line)')+';border-radius:12px;padding:8px 11px;font-size:13px"><div style="font-size:10.5px;opacity:.75;margin-bottom:2px">'+escapeHtml(m.by)+' · '+new Date(m.at).toLocaleString('pt-PT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>'+escapeHtml(m.text)+'</div>';
+  }).join('')||'<div style="color:var(--faint);font-size:12.5px">Ainda sem mensagens. Escreva a primeira.</div>'):'';
+  box.scrollTop=box.scrollHeight;
+  document.getElementById('chInput').disabled=!c;
+}
+function chSend(){
+  var i=document.getElementById('chInput'),t=i.value.trim();if(!t||!chActive)return;
+  var c=(STORE.chats||[]).find(function(x){return x.id===chActive});if(!c)return;
+  c.msgs.push({id:uid(),at:Date.now(),from:'me',by:me().name,text:t.slice(0,500)});
+  i.value='';audit('Mensagem marketplace: '+c.stand);save();renderChats();
+}
+document.addEventListener('click',function(e){
+  var o=e.target.closest('[data-ch-open]');if(o){chActive=o.getAttribute('data-ch-open');renderChats();return;}
+  if(e.target.closest('[data-ch-send]')){chSend();return;}
+  var d=e.target.closest('[data-ch-del]');
+  if(d){var id=d.getAttribute('data-ch-del');askConfirm('Apagar esta conversa e todas as mensagens?',function(){STORE.chats=(STORE.chats||[]).filter(function(x){return x.id!==id});save();renderChats();toast('Conversa apagada.','ok')},'Apagar');}
+});
+document.addEventListener('keydown',function(e){if(e.target.id==='chInput'&&e.key==='Enter'){e.preventDefault();chSend();}});
 var MK_SAMPLES=[
  {id:'mk1',stand:'Auto Minho, Lda.',city:'Viana do Castelo',brand:'Audi',model:'A3',version:'1.6 TDI Sportback',year:2018,km:128000,fuel:'Diesel',price:16900,days:1},
  {id:'mk2',stand:'Stand Douro Motors',city:'Porto',brand:'Mercedes-Benz',model:'Classe A',version:'180 d AMG Line',year:2020,km:76000,fuel:'Diesel',price:24500,days:2},
@@ -1937,6 +2010,7 @@ function mkItems(){
   return own.concat(MK_SAMPLES.map(function(x){return Object.assign({sample:true},x)}));
 }
 function renderMarketplace(){
+  chSeed();
   var q=(document.getElementById('mkQ').value||'').toLowerCase().trim(),mx=parseInt(document.getElementById('mkMax').value,10),fu=document.getElementById('mkFuel').value,so=document.getElementById('mkSort').value;
   var items=mkItems().filter(function(x){
     if(q&&(x.brand+' '+x.model+' '+x.version+' '+x.stand+' '+x.city).toLowerCase().indexOf(q)===-1)return false;
@@ -1947,7 +2021,7 @@ function renderMarketplace(){
   document.getElementById('mkGrid').innerHTML=items.map(function(x){
     var tint=x.own?'var(--accent)':'#64748b';
     return '<div class="panel" style="padding:0;overflow:hidden;display:flex;flex-direction:column">'+
-      '<div style="height:96px;background:linear-gradient(135deg,'+tint+',#0f172a);display:flex;align-items:flex-end;justify-content:space-between;padding:10px 12px;color:#fff"><strong style="font-size:20px;letter-spacing:.5px">'+escapeHtml(x.brand)+'</strong><span style="font-size:10.5px;opacity:.85">'+(x.own?'O seu stand':x.sample?'Exemplo':'')+'</span></div>'+
+      '<div style="height:96px;background:linear-gradient(135deg,'+tint+',#0f172a);display:flex;align-items:flex-end;justify-content:flex-end;padding:10px 12px;color:#fff;position:relative">'+brandBadge(x.brand)+'<span style="font-size:10.5px;opacity:.85">'+(x.own?'O seu stand':x.sample?'Exemplo':'')+'</span></div>'+
       '<div style="padding:13px 14px;display:grid;gap:5px;flex:1"><div style="font-weight:750">'+escapeHtml(x.brand)+' '+escapeHtml(x.model)+'</div><div style="font-size:12px;color:var(--muted)">'+escapeHtml(x.version)+'</div>'+
       '<div style="font-size:12px;color:var(--muted)">'+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km · '+escapeHtml(x.fuel)+'</div>'+
       '<div style="font-size:19px;font-weight:800;margin-top:4px">'+euro(x.price*100)+'</div>'+
@@ -1959,6 +2033,7 @@ function renderMarketplace(){
     return '<tr><td class="cell-primary">'+escapeHtml(v.brand)+' '+escapeHtml(v.model)+'<span class="cell-sub">'+escapeHtml(v.plate||'')+'</span></td><td class="num">'+euro(v.askingCents)+'</td><td><span class="pill '+(ok?'good':'flat')+'">'+escapeHtml(v.status)+'</span></td>'+
       '<td class="num">'+(ok?'<button class="btn '+(v.published?'btn-ghost':'btn-primary')+'" type="button" data-mk-pub="'+escapeHtml(v.id)+'">'+(v.published?'Retirar':'Publicar')+'</button>':'<span class="cell-sub">Só viaturas disponíveis</span>')+'</td></tr>';
   }).join('')||'<tr><td colspan="4"><div class="table-empty">Sem viaturas no parque.</div></td></tr>';
+  renderChats();
 }
 document.addEventListener('click',function(e){
   var g=e.target.closest('[data-goto]');if(g){location.hash='#'+g.getAttribute('data-goto');return;}
@@ -1971,9 +2046,7 @@ document.addEventListener('click',function(e){
   var c=e.target.closest('[data-mk-contact]');
   if(c){
     var it=MK_SAMPLES.find(function(x){return x.id===c.getAttribute('data-mk-contact')});if(!it)return;
-    if(!autoOnce('mk:'+it.id)){toast('Já criou uma tarefa para este anúncio.','err');return;}
-    STORE.tasks.push({id:uid(),title:'Contactar '+it.stand+' sobre '+it.brand+' '+it.model,description:'Anúncio do marketplace (exemplo): '+it.brand+' '+it.model+' '+it.version+', '+it.year+', '+it.km+' km, '+it.price+' €. Stand: '+it.stand+', '+it.city+'.',vehicleId:'',assigneeId:STORE.me,dueOn:daysFromNow(2),priority:'Média',status:'Pendente',createdAt:Date.now()});
-    audit('Contacto marketplace: '+it.stand);save();renderAll();toast('Tarefa criada: contactar '+it.stand+'.','ok');
+    chOpen(it.id,it.brand+' '+it.model+' '+it.year,it.stand);
   }
 });
 document.addEventListener('input',function(e){if(e.target.id==='mkQ'||e.target.id==='mkMax'||e.target.id==='mkFuel'||e.target.id==='mkSort')renderMarketplace();});
@@ -2395,7 +2468,7 @@ function renderDossier(){
   var sup=STORE.suppliers.find(function(x){return x.id===v.supplierId});
   var pillV=v.status==='Disponível'?'good':v.status==='Reservada'?'warn':'flat';
   var add=function(form,label){return '<button class="btn btn-ghost admin-only" type="button" data-add-for="'+form+'|'+v.id+'">＋ '+label+'</button>'};
-  var head='<div class="dsr-hero"><div class="dsr-cover">'+(v.coverFileId?'<img data-th="'+v.coverFileId+'" alt="">':'<span>Sem fotografia de apresentação</span>')+'</div><div class="dsr-hero-main"><div class="dsr-title"><h2>'+escapeHtml(v.brand)+' '+escapeHtml(v.model)+'</h2><span>'+escapeHtml(v.version||'')+'</span></div><div class="dsr-tags"><span class="dossier-plate" style="margin:0">'+escapeHtml(v.plate||'s/ matrícula')+'</span><span class="pill '+pillV+'">'+escapeHtml(v.status)+'</span>'+(activeSale?'<span class="pill flat">Vendida</span>':'')+'<span class="pill '+(pct>=80?'good':pct>=40?'warn':'bad')+'">Dossiê '+pct+'% completo</span></div>'+kv([['Preço anunciado',euro(v.askingCents)]].concat(isAdmin()?[['Margem prevista',euro(margin)+' · '+mpct.toFixed(1).replace('.',',')+'%',margin<0?'neg':'']]:[]).concat([['Em stock',days===null?'—':days+' dia(s)'],['Riscos em aberto',String(openD.length)]]))+'<div class="dsr-hero-act"><button class="btn btn-primary admin-only" type="button" data-edit-vehicle="'+v.id+'">✎ Editar viatura</button></div></div></div>';
+  var head='<div class="dsr-hero"><div class="dsr-cover">'+(v.coverFileId?'<img data-th="'+v.coverFileId+'" alt="">':'<span>Sem fotografia de apresentação</span>')+brandBadge(v.brand)+'</div><div class="dsr-hero-main"><div class="dsr-title"><h2>'+escapeHtml(v.brand)+' '+escapeHtml(v.model)+'</h2><span>'+escapeHtml(v.version||'')+'</span></div><div class="dsr-tags"><span class="dossier-plate" style="margin:0">'+escapeHtml(v.plate||'s/ matrícula')+'</span><span class="pill '+pillV+'">'+escapeHtml(v.status)+'</span>'+(activeSale?'<span class="pill flat">Vendida</span>':'')+'<span class="pill '+(pct>=80?'good':pct>=40?'warn':'bad')+'">Dossiê '+pct+'% completo</span></div>'+kv([['Preço anunciado',euro(v.askingCents)]].concat(isAdmin()?[['Margem prevista',euro(margin)+' · '+mpct.toFixed(1).replace('.',',')+'%',margin<0?'neg':'']]:[]).concat([['Em stock',days===null?'—':days+' dia(s)'],['Riscos em aberto',String(openD.length)]]))+'<div class="dsr-hero-act"><button class="btn btn-primary admin-only" type="button" data-edit-vehicle="'+v.id+'">✎ Editar viatura</button></div></div></div>';
   var nav='<nav class="dsr-nav">'+[['precos','Preços'],['ficha','Ficha técnica'],['fotos','Fotografias'],['docs','Documentos'],['fatura','Faturação e custos'],['riscos','Riscos e danos'],['fiscal','IUC / fiscal'],['venda','Venda'],['leads','Oportunidades'],['tarefas','Tarefas'],['notas','Notas'],['cron','Cronologia']].map(function(x){return '<button type="button" data-dsr-go="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</nav>';
   var ph=(v.priceHistory||[]).slice().reverse();
   var adm=isAdmin();
