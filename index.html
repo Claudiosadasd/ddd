@@ -953,9 +953,9 @@ function seedData(){
   return d;
 }
 
-var STORE=null;
+var STORE=null,LOADED_REV=0,SKIPMERGE=0;
 function load(){
-  try{var raw=localStorage.getItem(STORAGE_KEY);if(raw){STORE=JSON.parse(raw);if(STORE&&STORE.vehicles){if(!STORE.org)STORE.org={name:'Auto Norte, Lda.',city:'Braga'};STORE.audit=STORE.audit||[];ensureFeat();return;}}}catch(e){}
+  try{var raw=localStorage.getItem(STORAGE_KEY);if(raw){STORE=JSON.parse(raw);if(STORE&&STORE.vehicles){LOADED_REV=STORE._rev||0;if(!STORE.org)STORE.org={name:'Auto Norte, Lda.',city:'Braga'};STORE.audit=STORE.audit||[];ensureFeat();return;}}}catch(e){}
   STORE=(CUR_ACC&&!CUR_ACC.demo)?emptyData(CUR_ACC):seedData();ensureFeat();save();
 }
 var CUR_ACC=null;
@@ -966,7 +966,12 @@ function emptyData(acc){
   return d;
 }
 function freshData(){var d=(CUR_ACC&&!CUR_ACC.demo)?emptyData(CUR_ACC):seedData();ensureFeat(d);return d}
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(STORE))}catch(e){if(!window.__qw){window.__qw=1;toast('Armazenamento do navegador cheio: algumas alterações podem não ficar guardadas.','err')}}}
+function mergeStore(o){Object.keys(o).forEach(function(k){if(Array.isArray(o[k])&&Array.isArray(STORE[k])){var have={};STORE[k].forEach(function(x){if(x&&x.id)have[x.id]=1});o[k].forEach(function(x){if(x&&x.id&&!have[x.id])STORE[k].push(x)})}})}
+function save(){try{
+  var cur=null;try{cur=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null')}catch(e){}
+  if(cur&&!SKIPMERGE&&(cur._rev||0)>LOADED_REV)mergeStore(cur);
+  SKIPMERGE=0;STORE._rev=Math.max(cur&&cur._rev||0,LOADED_REV)+1;LOADED_REV=STORE._rev;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(STORE))}catch(e){if(!window.__qw){window.__qw=1;toast('Armazenamento do navegador cheio: algumas alterações podem não ficar guardadas.','err')}}}
 function logActivity(text,kind){STORE.activity.unshift({text:text,kind:kind||'blue',at:Date.now()});STORE.activity=STORE.activity.slice(0,10);}
 function me(){return STORE.sellers.find(function(s){return s.id===STORE.me})||STORE.sellers[0]}
 function isAdmin(){return me().role==='owner'}
@@ -1815,7 +1820,7 @@ document.addEventListener('click',function(e){
   var csvBtn=e.target.closest('[data-csv]');if(csvBtn){copyCsv(csvBtn.getAttribute('data-csv'));return;}
 
   if(e.target.id==='btnSeed'||e.target.id==='btnSeed2'){
-    askConfirm('Repor os dados de demonstração? Todos os registos criados neste navegador serão apagados.',function(){STORE=freshData();save();toast('Dados repostos.');renderAll();},'Repor');
+    askConfirm('Repor os dados de demonstração? Todos os registos criados neste navegador serão apagados.',function(){STORE=freshData();SKIPMERGE=1;save();toast('Dados repostos.');renderAll();},'Repor');
     return;
   }
 });
@@ -2293,7 +2298,7 @@ document.addEventListener('click',function(e){
   if(t.closest('[data-backup-restore]')){if(!isAdmin())return;document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:560px"><div class="modal-head"><div><span>CÓPIA DE SEGURANÇA</span><h2>Restaurar dados</h2></div><button id="modalClose" aria-label="Fechar">×</button></div><div style="padding:18px 24px 22px"><p class="rgpd-note" style="margin:0 0 10px">Cola o texto da cópia. Isto substitui todos os dados atuais deste stand.</p><textarea id="bkText" rows="7" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px;font:12px var(--mono)"></textarea><div class="modal-error" id="bkErr" hidden></div><div class="modal-actions" style="padding:14px 0 0"><button type="button" class="btn btn-ghost" id="bkCancel">Cancelar</button><button type="button" class="btn btn-primary" data-backup-apply>Restaurar</button></div></div></div></div>';document.getElementById('modalClose').onclick=closeForm;document.getElementById('bkCancel').onclick=closeForm;return;}
   if(t.closest('[data-backup-apply]')){if(!isAdmin())return;var err=document.getElementById('bkErr'),d;try{d=JSON.parse(document.getElementById('bkText').value)}catch(e2){d=null}
     if(!d||!Array.isArray(d.vehicles)||!Array.isArray(d.sellers)||!d.sellers.length||!d.sellers.every(function(z){return z&&typeof z==='object'})||!d.sellers.some(function(z){return z.role==='owner'})||['vehicles','sellers','customers','sales','costs','damages','iuc','suppliers','tasks','files','notifications','vlogs','leads','targets','activity','audit'].some(function(k){return d[k]!==undefined&&!Array.isArray(d[k])})){err.textContent='Texto inválido: não parece uma cópia de segurança NEXORA.';err.hidden=false;return;}
-    var meOld=STORE.me;STORE=d;if(!STORE.sellers.some(function(z){return z.id===meOld}))STORE.me=STORE.sellers.find(function(z){return z.role==='owner'}).id;else STORE.me=meOld;
+    var meOld=STORE.me;STORE=d;SKIPMERGE=1;if(!STORE.sellers.some(function(z){return z.id===meOld}))STORE.me=STORE.sellers.find(function(z){return z.role==='owner'}).id;else STORE.me=meOld;
     ensureFeat();audit('Dados restaurados a partir de cópia de segurança');save();closeForm();renderAll();toast('Dados restaurados.','ok');return;}
 });
 applyDevice();
@@ -2331,7 +2336,7 @@ function cloudRestore(){
       var js='';rs.forEach(function(r){js+=(r.exists&&r.data().part)||''});
       var o;try{o=JSON.parse(js)}catch(e){o=null}
       if(!o||!Array.isArray(o.vehicles)||!Array.isArray(o.sellers)||!o.sellers.some(function(z){return z.role==='owner'})){toast('Os dados gravados estão incompletos.','err');return;}
-      var meOld=STORE.me;STORE=o;if(!STORE.sellers.some(function(z){return z.id===meOld}))STORE.me=STORE.sellers.find(function(z){return z.role==='owner'}).id;else STORE.me=meOld;
+      var meOld=STORE.me;STORE=o;SKIPMERGE=1;if(!STORE.sellers.some(function(z){return z.id===meOld}))STORE.me=STORE.sellers.find(function(z){return z.role==='owner'}).id;else STORE.me=meOld;
       ensureFeat();audit('Dados restaurados a partir da base de dados');save();renderAll();toast('Dados restaurados da base de dados.','ok');
     });
   }).catch(function(){toast('Não foi possível ler a base de dados.','err')});
@@ -2553,6 +2558,16 @@ function enterApp(acc,welcome,skipTerms){
 }
 ['pointerdown','keydown','touchstart','scroll'].forEach(function(ev){document.addEventListener(ev,function(){if(CUR_ACC)touchSeen()},{passive:true,capture:true})});
 setInterval(function(){if(CUR_ACC&&sessionExpired()){logout();toast('Sessão terminada por inatividade (30 min).','warn')}},60000);
+window.addEventListener('storage',function(e){
+  if(!CUR_ACC||!STORAGE_KEY||e.key!==STORAGE_KEY||!e.newValue)return;
+  try{var n=JSON.parse(e.newValue);if(n&&n.vehicles&&(n._rev||0)>LOADED_REV){var meId=STORE&&STORE.me;STORE=n;LOADED_REV=n._rev||0;if(meId&&n.sellers.some(function(z){return z.id===meId}))STORE.me=meId;ensureFeat();renderAll()}}catch(x){}
+});
+var ICON_LBL={edit:'Editar',del:'Apagar',open:'Abrir',files:'Ficheiros',close:'Fechar',pdf:'Exportar PDF',view:'Ver'};
+function labelIcons(root){(root||document).querySelectorAll('button:not([aria-label]),a[role=button]:not([aria-label])').forEach(function(b){
+  if((b.textContent||'').replace(/[\s×✎✕✖+＋]/g,'').length)return;
+  var t=b.getAttribute('title');if(!t){var at=Array.prototype.map.call(b.attributes,function(a){return a.name}).filter(function(n){return n.indexOf('data-')===0});var m=at.length?at[0].replace('data-',''):'';t=ICON_LBL[m.split('-')[0]]||(m?m.replace(/-/g,' '):'Ação')}
+  b.setAttribute('aria-label',t)})}
+try{new MutationObserver(function(){clearTimeout(window.__lt);window.__lt=setTimeout(function(){labelIcons()},120)}).observe(document.body,{childList:true,subtree:true})}catch(e){}
 function logout(){
   putSession(null);CUR_ACC=null;STORE=null;location.hash='';
   document.getElementById('loginPass').value='';
@@ -2575,6 +2590,7 @@ document.getElementById('formLogin').addEventListener('submit',function(e){
   if(!email||!pass){err.textContent='Indica o email e a palavra-passe.';return;}
   var wait=loginLockLeft(email);
   if(wait>0){err.textContent='Demasiadas tentativas. Tenta novamente em '+wait+' s.';return;}
+  var lbtn=document.querySelector('#formLogin button[type=submit]'),lold=lbtn.textContent;lbtn.disabled=true;lbtn.textContent='A verificar…';function ldone(){lbtn.disabled=false;lbtn.textContent=lold}
   ensureDemo().then(function(){
     var acc=getAccounts().find(function(x){return x.email===email});
     if(!acc)return {ok:false};
@@ -2584,9 +2600,9 @@ document.getElementById('formLogin').addEventListener('submit',function(e){
       return hashPw(email,pass).then(function(h){acc.hash=h;putAccounts(getAccounts().map(function(x){return x.email===email?acc:x}));return {ok:true,acc:acc}});
     });
   }).then(function(r){
-    if(!r||!r.ok){loginFail(email);err.textContent='Email ou palavra-passe incorretos.';return;}
+    ldone();if(!r||!r.ok){loginFail(email);err.textContent='Email ou palavra-passe incorretos.';return;}
     loginReset(email);enterApp(r.acc,false);
-  }).catch(function(){err.textContent='Não foi possível verificar a palavra-passe neste navegador. Confirma que o site é aberto em HTTPS.';});
+  }).catch(function(){ldone();err.textContent='Não foi possível verificar a palavra-passe neste navegador. Confirma que o site é aberto em HTTPS.';});
 });
 function syncReg(){document.getElementById('regSubmit').disabled=!(document.getElementById('regTerms').checked&&document.getElementById('regPro').checked)}
 document.getElementById('regTerms').addEventListener('change',syncReg);document.getElementById('regPro').addEventListener('change',syncReg);
@@ -2596,6 +2612,7 @@ document.getElementById('formRegister').addEventListener('submit',function(e){
   var name=document.getElementById('regName').value.trim(),stand=document.getElementById('regStand').value.trim(),email=document.getElementById('regEmail').value.trim().toLowerCase(),p1=document.getElementById('regPass').value,p2=document.getElementById('regPass2').value,err=document.getElementById('regErr');
   if(!document.getElementById('regTerms').checked||!document.getElementById('regPro').checked){err.textContent='Tens de aceitar os Termos e Condições e as declarações para criar conta.';return;}
   if(!name||!stand||!email||!p1){err.textContent='Preenche todos os campos.';return;}
+  var rbtn=document.getElementById('regSubmit'),rold=rbtn.textContent;rbtn.disabled=true;rbtn.textContent='A criar conta…';function rdone(){rbtn.textContent=rold;rbtn.disabled=false}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){err.textContent='Email inválido.';return;}
   if(p1.length<8){err.textContent='A palavra-passe deve ter pelo menos 8 caracteres.';return;}
   if(p1!==p2){err.textContent='As palavras-passe não coincidem.';return;}
@@ -2603,9 +2620,9 @@ document.getElementById('formRegister').addEventListener('submit',function(e){
     if(getAccounts().some(function(x){return x.email===email})){err.textContent='Já existe uma conta com este email. Entra com a tua palavra-passe.';return;}
     return hashPw(email,p1).then(function(h){
       var id=uid(),acc={id:id,email:email,name:name,stand:stand,hash:h,dataKey:'nexora-acc-'+id,demo:false,terms:{version:TERMS_VERSION,at:new Date().toISOString(),professional:true}};
-      var a=getAccounts();a.push(acc);putAccounts(a);enterApp(acc,true,true);
+      var a=getAccounts();a.push(acc);putAccounts(a);enterApp(acc,true,true);rdone();
     });
-  }).catch(function(){err.textContent='Não foi possível criar a conta neste navegador. Confirma que o site é aberto em HTTPS.';});
+  }).catch(function(){rdone();err.textContent='Não foi possível criar a conta neste navegador. Confirma que o site é aberto em HTTPS.';});
 });
 
 /* ---------------- 3D tilt on pointer ---------------- */
@@ -2627,7 +2644,7 @@ function showIntro(){
     if(!gateEl||getComputedStyle(gateEl).display==='none')return;
     var ov=document.createElement('div');ov.className='intro';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Vídeo de apresentação Nexora');
     ov.innerHTML='<div class="intro-box"><video playsinline preload="auto">'+
-      '<source src="nexora-intro.mp4" type="video/mp4"><source src="/_blob/36e32078de85805880e3bd5b80d13459" type="video/mp4"></video>'+
+      '<source src="'+((window.innerWidth<=700||(navigator.connection&&navigator.connection.saveData))?'nexora-intro-mobile.mp4':'nexora-intro.mp4')+'" type="video/mp4"><source src="/_blob/36e32078de85805880e3bd5b80d13459" type="video/mp4"></video>'+
       '<button type="button" class="intro-btn intro-sound" hidden>🔇 Desativar som</button>'+
       '<button type="button" class="intro-play" hidden>▶&nbsp; Ver com som</button>'+
       '<button type="button" class="intro-btn intro-skip" aria-hidden="true" tabindex="-1">Saltar ›</button><div class="intro-bar"></div></div>';
