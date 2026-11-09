@@ -1909,7 +1909,7 @@ function avLeads(){
   if(ch)shPut(sh);return sh.leads;
 }
 function avFicha(id){
-  var l=shGet().leads.find(function(x){return x.id===id});if(!l)return;
+  var l=(isCloud()?ALC.items:shGet().leads).find(function(x){return x.id===id});if(!l)return;
   var row=function(k,v){return v===''||v==null?'':'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span style="color:var(--muted)">'+k+'</span><b style="text-align:right">'+escapeHtml(String(v))+'</b></div>'};
   var tel=String(l.phone||'').replace(/[^\d+]/g,'');
   document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:480px"><div class="modal-head"><div><span>FICHA PARA NEGOCIAR</span><h2>'+escapeHtml(l.brand+' '+l.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
@@ -1921,8 +1921,8 @@ function avFicha(id){
   document.getElementById('modalBackdrop').addEventListener('mousedown',function(e){if(e.target.id==='modalBackdrop')cl()});
 }
 function renderAvaliador(){
-  avSeed();
-  var list=avLeads().slice().sort(function(a,b){return b.at-a.at});
+  var cloud=isCloud();if(!cloud)avSeed();else alcLoad();
+  var list=(cloud?ALC.items:avLeads()).slice().sort(function(a,b){return b.at-a.at});
   document.getElementById('avalTotals').textContent=list.length+' pedidos · só leitura';
   var b=document.getElementById('bubble-avaliador');if(b)b.textContent=list.length||'';
   document.getElementById('avalBody').innerHTML=list.map(function(x){
@@ -2063,8 +2063,9 @@ function shSyncMine(){
   return sh;
 }
 function mkFicha(id){
-  var sh=shGet(),l=sh.listings.find(function(x){return x.id===id});
+  var sh=shGet(),l=isCloud()?null:sh.listings.find(function(x){return x.id===id});var cl=isCloud()?MKC.items.find(function(x){return x.id===id}):null;
   var x=l?{brand:l.brand,model:l.model,version:l.version,plate:l.plate,year:l.year,km:l.km,fuel:l.fuel,color:l.color,notes:l.notes,price:Math.round((l.priceCents||0)/100),stand:l.stand,city:l.city,phone:l.phone,at:l.at,own:l.ownerKey===myKey(),lid:l.id}:null;
+  if(cl)x=Object.assign({lid:cl.id},cl);
   if(!x){var m=MK_SAMPLES.find(function(y){return y.id===id});if(!m)return;x=Object.assign({sample:true,lid:m.id,at:Date.now()-m.days*864e5},m)}
   var row=function(k,v){return v===''||v==null?'':'<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px"><span style="color:var(--muted)">'+k+'</span><b style="text-align:right">'+escapeHtml(String(v))+'</b></div>'};
   var tel=x.phone?String(x.phone).replace(/[^\d+]/g,''):'';
@@ -2074,12 +2075,13 @@ function mkFicha(id){
    (x.notes?'<p style="font-size:12.5px;color:var(--muted);margin:10px 0 0">'+escapeHtml(x.notes)+'</p>':'')+
    '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Fechar</button>'+
    (tel?'<a class="btn btn-ghost" href="tel:'+escapeHtml(tel)+'">Ligar</a>':'')+
-   (x.own?'<button type="button" class="btn btn-ghost" data-mk-edit="'+escapeHtml(x.lid)+'">Editar</button>':'<button type="button" class="btn btn-primary" data-mk-contact="'+escapeHtml(x.lid)+'">Contactar stand</button>')+'</div></div></div>';
+   (x.own?'<button type="button" class="btn btn-ghost" data-mk-edit="'+escapeHtml(x.lid)+'">Editar</button>':(isCloud()?'':'<button type="button" class="btn btn-primary" data-mk-contact="'+escapeHtml(x.lid)+'">Contactar stand</button>'))+'</div></div></div>';
   var cl=function(){document.getElementById('modalRoot').innerHTML=''};
   document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
   document.getElementById('modalBackdrop').addEventListener('mousedown',function(e){if(e.target.id==='modalBackdrop')cl()});
 }
 function mkEdit(id){
+  if(isCloud())return mkEditC(id);
   var sh=shGet(),l=sh.listings.find(function(x){return x.id===id});
   if(!l||l.ownerKey!==myKey()){toast('Só a conta que publicou pode editar este anúncio.','err');return}
   document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:440px"><div class="modal-head"><div><span>EDITAR ANÚNCIO</span><h2>'+escapeHtml(l.brand+' '+l.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
@@ -2095,6 +2097,7 @@ function mkEdit(id){
   };
 }
 function mkDelete(id){
+  if(isCloud())return mkDeleteC(id);
   var sh=shGet(),l=sh.listings.find(function(x){return x.id===id});
   if(!l||l.ownerKey!==myKey()){toast('Só a conta que publicou pode apagar este anúncio.','err');return}
   askConfirm('Apagar o anúncio de '+l.brand+' '+l.model+' do marketplace? A viatura continua no seu parque.',function(){
@@ -2103,13 +2106,89 @@ function mkDelete(id){
     audit('Apagou anúncio no marketplace: '+l.brand+' '+l.model);save();renderAll();toast('Anúncio apagado.','ok');
   },'Apagar');
 }
+
+/* ---------------- dados na cloud (Supabase REST + RLS) ---------------- */
+function isCloud(){return !!(CUR_ACC&&CUR_ACC.sb)}
+function sbToken(){
+  var tk=sbTok();if(!tk||!tk.a)return Promise.resolve(null);
+  if(tk.exp-Date.now()>60000)return Promise.resolve(tk.a);
+  return sbReq('/auth/v1/token?grant_type=refresh_token',{body:{refresh_token:tk.r}}).then(function(r){if(r.ok&&r.j.access_token){sbSaveTok(r.j);return r.j.access_token}return null}).catch(function(){return null});
+}
+function sbAuth(path,opts){
+  return sbToken().then(function(t){
+    if(!t){if(CUR_ACC){logout();toast('Sessão expirada. Entra novamente.','warn')}return {ok:false,status:401,j:{}}}
+    return sbReq(path,Object.assign({},opts,{bearer:t}));
+  });
+}
+var MKC={items:[],loaded:false,loading:false,stand:null},ALC={items:[],loaded:false,loading:false};
+function mkEnsureStand(){
+  if(MKC.stand)return Promise.resolve(MKC.stand);
+  return sbAuth('/rest/v1/profiles?select=stand_id',{method:'GET'}).then(function(r){var x=r.ok&&r.j&&r.j[0];MKC.stand=x?x.stand_id:null;return MKC.stand});
+}
+function mkCloudLoad(force){
+  if(MKC.loading||(MKC.loaded&&!force))return;MKC.loading=true;
+  mkEnsureStand().then(function(){return sbAuth('/rest/v1/listings?select=*,stands(name,city,phone)&order=created_at.desc&limit=500',{method:'GET'})}).then(function(r){
+    MKC.loading=false;if(!r.ok){toast('Não foi possível carregar o marketplace.','err');return}
+    MKC.items=r.j.map(function(l){var st=l.stands||{};return {id:l.id,own:l.stand_id===MKC.stand,stand:st.name||'Stand',city:st.city||'',phone:st.phone||'',brand:l.brand,model:l.model,version:l.version||'',plate:l.plate||'',year:l.year,km:l.km,fuel:l.fuel||'',color:l.color||'',notes:l.notes||'',price:Math.round((l.price_cents||0)/100),at:new Date(l.created_at).getTime(),days:Math.max(0,Math.floor((Date.now()-new Date(l.created_at).getTime())/864e5)),vref:l.vehicle_ref}});
+    MKC.loaded=true;if((location.hash||'')==='#marketplace')renderMarketplace();
+  }).catch(function(){MKC.loading=false;toast('Sem ligação ao servidor.','err')});
+}
+function alcLoad(force){
+  if(ALC.loading||(ALC.loaded&&!force))return;ALC.loading=true;
+  sbAuth('/rest/v1/valuation_leads?select=*&order=created_at.desc&limit=500',{method:'GET'}).then(function(r){
+    ALC.loading=false;if(!r.ok)return;
+    ALC.items=r.j.map(function(l){return {id:l.id,at:new Date(l.created_at).getTime(),plate:l.plate,brand:l.brand,model:l.model,year:l.year,km:l.km,fuel:l.fuel,cond:l.cond,low:l.low_eur,high:l.high_eur,name:l.customer_name||'',phone:l.customer_phone||'',email:l.customer_email||'',consent:!!l.consent,billable:true,stand:''}});
+    ALC.loaded=true;if(document.getElementById('avalBody'))renderAvaliador();
+  }).catch(function(){ALC.loading=false});
+}
+function mkCloudPub(v){
+  mkEnsureStand().then(function(sid){
+    if(!sid){toast('Conta sem stand associado.','err');return}
+    if(v.published){
+      var org=STORE.org||{};
+      return sbAuth('/rest/v1/stands?id=eq.'+sid,{method:'PATCH',body:{name:org.name||CUR_ACC.stand,city:org.city||null,phone:org.phone||null}}).then(function(){
+        return sbAuth('/rest/v1/listings',{method:'POST',prefer:'return=minimal',body:{stand_id:sid,vehicle_ref:v.id,brand:v.brand,model:v.model,version:v.version||null,plate:v.plate||null,year:v.year,km:v.km,fuel:v.fuel||null,color:v.color||null,price_cents:v.askingCents||0}});
+      }).then(function(r){if(!r.ok&&r.status!==409){toast('Não foi possível publicar.','err');v.published=false;save();renderAll();return}mkCloudLoad(true)});
+    }
+    return sbAuth('/rest/v1/listings?stand_id=eq.'+sid+'&vehicle_ref=eq.'+encodeURIComponent(v.id),{method:'DELETE'}).then(function(){mkCloudLoad(true)});
+  });
+}
+function mkEditC(id){
+  var l=MKC.items.find(function(x){return x.id===id});
+  if(!l||!l.own){toast('Só a conta que publicou pode editar este anúncio.','err');return}
+  document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:440px"><div class="modal-head"><div><span>EDITAR ANÚNCIO</span><h2>'+escapeHtml(l.brand+' '+l.model)+'</h2></div><button id="modalClose" aria-label="Fechar">×</button></div>'+
+   '<div class="field"><label for="mkEdPrice">Preço (€)</label><input id="mkEdPrice" type="number" inputmode="numeric" min="0" value="'+l.price+'"></div>'+
+   '<div class="field" style="margin-top:10px"><label for="mkEdNotes">Descrição</label><input id="mkEdNotes" maxlength="300" value="'+escapeHtml(l.notes||'')+'"></div>'+
+   '<div class="modal-actions" style="margin-top:16px"><button type="button" class="btn btn-ghost" id="modalCancel">Cancelar</button><button type="button" class="btn btn-primary" id="mkEdSave">Guardar</button></div></div></div>';
+  var cl=function(){document.getElementById('modalRoot').innerHTML=''};
+  document.getElementById('modalClose').onclick=cl;document.getElementById('modalCancel').onclick=cl;
+  document.getElementById('mkEdSave').onclick=function(){
+    var pr=parseInt(document.getElementById('mkEdPrice').value,10);if(!(pr>=0)){toast('Preço inválido.','err');return}
+    sbAuth('/rest/v1/listings?id=eq.'+encodeURIComponent(id),{method:'PATCH',prefer:'return=representation',body:{price_cents:pr*100,notes:document.getElementById('mkEdNotes').value.trim().slice(0,300)}}).then(function(r){
+      if(!r.ok||!r.j||!r.j.length){toast('Sem permissão para editar este anúncio.','err');return}
+      audit('Editou anúncio no marketplace: '+l.brand+' '+l.model);cl();mkCloudLoad(true);toast('Anúncio atualizado.','ok');
+    });
+  };
+}
+function mkDeleteC(id){
+  var l=MKC.items.find(function(x){return x.id===id});
+  if(!l||!l.own){toast('Só a conta que publicou pode apagar este anúncio.','err');return}
+  askConfirm('Apagar o anúncio de '+l.brand+' '+l.model+' do marketplace? A viatura continua no seu parque.',function(){
+    sbAuth('/rest/v1/listings?id=eq.'+encodeURIComponent(id),{method:'DELETE',prefer:'return=representation'}).then(function(r){
+      if(!r.ok||!r.j||!r.j.length){toast('Sem permissão para apagar este anúncio.','err');return}
+      var v=STORE.vehicles.find(function(x){return x.id===l.vref});if(v)v.published=false;
+      audit('Apagou anúncio no marketplace: '+l.brand+' '+l.model);save();renderAll();mkCloudLoad(true);toast('Anúncio apagado.','ok');
+    });
+  },'Apagar');
+}
 function mkItems(){
+  if(isCloud()){mkCloudLoad();return MKC.items.slice()}
   var sh=shSyncMine(),k=myKey();
   var all=sh.listings.map(function(l){return {id:l.id,own:l.ownerKey===k,stand:l.stand,city:l.city,brand:l.brand,model:l.model,version:l.version,year:l.year,km:l.km,fuel:l.fuel,price:Math.round((l.priceCents||0)/100),days:Math.max(0,Math.floor((Date.now()-l.at)/864e5))}});
   return all.concat(MK_SAMPLES.map(function(x){return Object.assign({sample:true},x)}));
 }
 function renderMarketplace(){
-  chSeed();
+  var cloud=isCloud();if(!cloud)chSeed();var cp=document.getElementById('mkChatPanel');if(cp)cp.style.display=cloud?'none':'';
   var q=(document.getElementById('mkQ').value||'').toLowerCase().trim(),mx=parseInt(document.getElementById('mkMax').value,10),fu=document.getElementById('mkFuel').value,so=document.getElementById('mkSort').value;
   var items=mkItems().filter(function(x){
     if(q&&(x.brand+' '+x.model+' '+x.version+' '+x.stand+' '+x.city).toLowerCase().indexOf(q)===-1)return false;
@@ -2125,14 +2204,14 @@ function renderMarketplace(){
       '<div style="font-size:12px;color:var(--muted)">'+escapeHtml(String(x.year))+' · '+escapeHtml(Number(x.km).toLocaleString('pt-PT'))+' km · '+escapeHtml(x.fuel)+'</div>'+
       '<div style="font-size:19px;font-weight:800;margin-top:4px">'+euro(x.price*100)+'</div>'+
       '<div style="font-size:11.5px;color:var(--faint)">'+escapeHtml(x.stand)+(x.city?' · '+escapeHtml(x.city):'')+'</div></div>'+
-      '<div style="padding:0 14px 14px;display:grid;gap:8px"><button class="btn btn-ghost" type="button" data-mk-ficha="'+escapeHtml(x.id)+'" style="width:100%">Ver ficha</button>'+(x.own?'<div style="display:flex;gap:8px"><button class="btn btn-ghost" type="button" data-mk-edit="'+escapeHtml(x.id)+'" style="flex:1">✎ Editar</button><button class="btn btn-ghost" type="button" data-mk-del="'+escapeHtml(x.id)+'" style="flex:1">× Apagar</button></div>':'<button class="btn btn-primary" type="button" data-mk-contact="'+escapeHtml(x.id)+'" style="width:100%">Contactar stand</button>')+'</div></div>';
+      '<div style="padding:0 14px 14px;display:grid;gap:8px"><button class="btn btn-ghost" type="button" data-mk-ficha="'+escapeHtml(x.id)+'" style="width:100%">Ver ficha</button>'+(x.own?'<div style="display:flex;gap:8px"><button class="btn btn-ghost" type="button" data-mk-edit="'+escapeHtml(x.id)+'" style="flex:1">✎ Editar</button><button class="btn btn-ghost" type="button" data-mk-del="'+escapeHtml(x.id)+'" style="flex:1">× Apagar</button></div>':(cloud?'':'<button class="btn btn-primary" type="button" data-mk-contact="'+escapeHtml(x.id)+'" style="width:100%">Contactar stand</button>'))+'</div></div>';
   }).join('')||'<div class="table-empty">Nenhuma viatura corresponde aos filtros.</div>';
   document.getElementById('mkMine').innerHTML=STORE.vehicles.map(function(v){
     var ok=v.status==='Disponível';
     return '<tr><td class="cell-primary">'+escapeHtml(v.brand)+' '+escapeHtml(v.model)+'<span class="cell-sub">'+escapeHtml(v.plate||'')+'</span></td><td class="num">'+euro(v.askingCents)+'</td><td><span class="pill '+(ok?'good':'flat')+'">'+escapeHtml(v.status)+'</span></td>'+
       '<td class="num">'+(ok?'<button class="btn '+(v.published?'btn-ghost':'btn-primary')+'" type="button" data-mk-pub="'+escapeHtml(v.id)+'">'+(v.published?'Retirar':'Publicar')+'</button>':'<span class="cell-sub">Só viaturas disponíveis</span>')+'</td></tr>';
   }).join('')||'<tr><td colspan="4"><div class="table-empty">Sem viaturas no parque.</div></td></tr>';
-  renderChats();
+  if(!cloud)renderChats();
 }
 document.addEventListener('click',function(e){
   var g=e.target.closest('[data-goto]');if(g){location.hash='#'+g.getAttribute('data-goto');return;}
@@ -2140,7 +2219,7 @@ document.addEventListener('click',function(e){
   if(p){
     if(!isAdmin()){toast('Sem permissão com o perfil Vendedor.','err');return;}
     var v=STORE.vehicles.find(function(x){return x.id===p.getAttribute('data-mk-pub')});if(!v)return;
-    v.published=!v.published;if(!v.published){var s3=shGet();s3.listings=s3.listings.filter(function(l){return !(l.ownerKey===myKey()&&l.vid===v.id)});shPut(s3)}audit((v.published?'Publicou':'Retirou')+' no marketplace: '+v.brand+' '+v.model);save();renderAll();toast(v.published?'Viatura publicada no marketplace.':'Viatura retirada do marketplace.','ok');return;
+    v.published=!v.published;if(isCloud())mkCloudPub(v);if(!v.published){var s3=shGet();s3.listings=s3.listings.filter(function(l){return !(l.ownerKey===myKey()&&l.vid===v.id)});shPut(s3)}audit((v.published?'Publicou':'Retirou')+' no marketplace: '+v.brand+' '+v.model);save();renderAll();toast(v.published?'Viatura publicada no marketplace.':'Viatura retirada do marketplace.','ok');return;
   }
   var c=e.target.closest('[data-mk-contact]');
   if(c){
@@ -2990,7 +3069,7 @@ window.addEventListener('storage',function(e){
 /* ---------------- Supabase Auth (REST) ---------------- */
 var SB_URL='https://qpythmevcmyogvertqba.supabase.co',SB_KEY='sb_publishable_RM3iti36Bxgl-gsX26tIoA_yTTImCzq',SB_TOK='nexora-sb-v1';
 function sbReq(path,opts){
-  opts=opts||{};var h={'apikey':SB_KEY,'Content-Type':'application/json'};if(opts.bearer)h['Authorization']='Bearer '+opts.bearer;
+  opts=opts||{};var h={'apikey':SB_KEY,'Content-Type':'application/json'};if(opts.bearer)h['Authorization']='Bearer '+opts.bearer;if(opts.prefer)h['Prefer']=opts.prefer;
   return fetch(SB_URL+path,{method:opts.method||'POST',headers:h,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,status:r.status,j:j}})});
 }
 function sbSaveTok(j){try{localStorage.setItem(SB_TOK,JSON.stringify({a:j.access_token,r:j.refresh_token,exp:Date.now()+(j.expires_in||3600)*1000,uid:j.user&&j.user.id}))}catch(e){}}
@@ -3018,7 +3097,7 @@ function labelIcons(root){(root||document).querySelectorAll('button:not([aria-la
   b.setAttribute('aria-label',t)})}
 try{new MutationObserver(function(){clearTimeout(window.__lt);window.__lt=setTimeout(function(){labelIcons()},120)}).observe(document.body,{childList:true,subtree:true})}catch(e){}
 function logout(){
-  try{var tk=sbTok();if(tk&&tk.a)sbReq('/auth/v1/logout',{bearer:tk.a}).catch(function(){})}catch(e){}sbClearTok();
+  try{var tk=sbTok();if(tk&&tk.a)sbReq('/auth/v1/logout',{bearer:tk.a}).catch(function(){})}catch(e){}sbClearTok();MKC={items:[],loaded:false,loading:false,stand:null};ALC={items:[],loaded:false,loading:false};
   putSession(null);CUR_ACC=null;STORE=null;location.hash='';
   document.getElementById('loginPass').value='';
   showAuth('login');
