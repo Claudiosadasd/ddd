@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://qpythmevcmyogvertqba.supabase.co; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Avalie o seu carro · NEXORA</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#0f172a;--muted:#5b6578;--line:#dfe4ec;--accent:#2563eb;--bad:#b42318;--good:#067647}
+@media(prefers-color-scheme:dark){:root{--bg:#0b1220;--card:#121b2e;--ink:#e8edf6;--muted:#9aa7bd;--line:#24314b;--accent:#5b8def;--bad:#f97066;--good:#47cd89}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:max(16px,env(safe-area-inset-top)) 16px 32px}
+main{max-width:520px;margin:0 auto}h1{font-size:24px;margin:8px 0 4px}p.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}input,select{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.chk{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:13px;color:var(--muted)}.chk input{width:auto;margin-top:3px}
+button{margin-top:16px;width:100%;font:inherit;font-weight:700;color:#fff;background:var(--accent);border:0;border-radius:10px;padding:13px;cursor:pointer}button:disabled{opacity:.6}
+#msg{min-height:20px;margin-top:10px;font-size:14px;color:var(--bad)}#res{display:none;margin-top:14px;padding:14px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}#res strong{display:block;font-size:26px}
+.hp{position:absolute;left:-9999px;height:0;overflow:hidden}
+</style>
+</head>
+<body>
+<main>
+<h1>Avalie o seu carro</h1>
+<p class="sub">Receba uma estimativa indicativa e um stand contacta-o sem compromisso.</p>
+<form class="card" id="f" novalidate>
+<label for="plate">Matrícula</label><input id="plate" autocomplete="off" placeholder="AB-12-CD" maxlength="10">
+<div class="row"><div><label for="brand">Marca</label><select id="brand"></select></div><div><label for="model">Modelo</label><input id="model" maxlength="60" placeholder="ex.: Golf 1.6 TDI"></div></div>
+<div class="row"><div><label for="year">Ano</label><input id="year" inputmode="numeric" maxlength="4" placeholder="2018"></div><div><label for="km">Quilómetros</label><input id="km" inputmode="numeric" maxlength="7" placeholder="120000"></div></div>
+<div class="row"><div><label for="fuel">Combustível</label><select id="fuel"><option>Gasolina</option><option>Diesel</option><option>Híbrido</option><option>Elétrico</option></select></div><div><label for="cond">Estado</label><select id="cond"><option>Excelente</option><option selected>Bom</option><option>Razoável</option><option>Necessita reparação</option></select></div></div>
+<label for="name">Nome</label><input id="name" maxlength="80" autocomplete="name">
+<div class="row"><div><label for="phone">Telemóvel</label><input id="phone" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="912 345 678"></div><div><label for="email">Email (opcional)</label><input id="email" type="email" maxlength="120" autocomplete="email"></div></div>
+<div class="hp" aria-hidden="true"><label>Website<input id="website" tabindex="-1" autocomplete="off"></label></div>
+<label class="chk"><input type="checkbox" id="consent"><span>Autorizo que os meus dados (contacto e viatura) sejam partilhados com stands para me contactarem sobre a compra do meu carro.</span></label>
+<button id="go" type="submit">Ver estimativa</button>
+<div id="msg" role="alert"></div>
+<div id="res"></div>
+</form>
+</main>
+<script>
+var B={premium:['Audi','BMW','Mercedes-Benz','Volvo','Land Rover','Porsche','Lexus','Mini'],medio:['Volkswagen','Toyota','Skoda','Seat','Cupra','Mazda','Hyundai','Kia','Peugeot','Renault','Ford','Nissan','Honda','Opel','Citroën','Mitsubishi','Suzuki','Jeep'],economico:['Dacia','Fiat','Smart','Alfa Romeo','Outra']};
+var BASE={premium:40000,medio:26000,economico:18000};
+var SB='https://qpythmevcmyogvertqba.supabase.co',KEY='sb_publishable_RM3iti36Bxgl-gsX26tIoA_yTTImCzq';
+var $=function(i){return document.getElementById(i)};
+var all=B.premium.concat(B.medio,B.economico).sort();$('brand').innerHTML='<option value="">Escolha…</option>'+all.map(function(b){return '<option>'+b+'</option>'}).join('');
+function tier(b){return B.premium.indexOf(b)>-1?'premium':B.economico.indexOf(b)>-1?'economico':'medio'}
+function est(o){var age=Math.max(0,new Date().getFullYear()-o.year),v=BASE[tier(o.brand)]*Math.max(.18,Math.pow(.88,age)),exp=Math.max(5000,age*15000),adj=Math.max(-.12,Math.min(.30,(o.km-exp)/200000));v*=1-adj;
+ v*={Gasolina:1,Diesel:.97,'Híbrido':1.05,'Elétrico':1}[o.fuel]||1;v*={Excelente:1.04,Bom:1,Razoável:.92,'Necessita reparação':.78}[o.cond]||1;
+ var r=function(x){return Math.max(500,Math.round(x/100)*100)};return{low:r(v*.92),high:r(v*1.08)}}
+function plate(raw){var t=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(t.length!==6)return'';var p=t.slice(0,2)+'-'+t.slice(2,4)+'-'+t.slice(4,6);return /^([A-Z]{2}-\d{2}-\d{2}|\d{2}-[A-Z]{2}-\d{2}|\d{2}-\d{2}-[A-Z]{2}|[A-Z]{2}-\d{2}-[A-Z]{2})$/.test(p)?p:''}
+function phone(raw){var t=String(raw||'').replace(/[\s.-]/g,'').replace(/^(\+|00)351/,'');return /^[29]\d{8}$/.test(t)?t:''}
+function eur(n){return n.toLocaleString('pt-PT')+' €'}
+$('f').addEventListener('submit',function(e){e.preventDefault();var m=$('msg');m.style.color='var(--bad)';m.textContent='';$('res').style.display='none';
+ if($('website').value)return;
+ var p=plate($('plate').value),b=$('brand').value,mo=$('model').value.trim(),y=parseInt($('year').value,10),km=parseInt($('km').value,10),n=$('name').value.trim(),ph=phone($('phone').value),em=$('email').value.trim(),cy=new Date().getFullYear();
+ if(!p)return m.textContent='Matrícula inválida (ex.: AB-12-CD).';if(!b||!mo)return m.textContent='Indique a marca e o modelo.';
+ if(!(y>=1995&&y<=cy+1))return m.textContent='Ano inválido.';if(!(km>=0&&km<=999999))return m.textContent='Quilómetros inválidos.';
+ if(n.length<2)return m.textContent='Indique o nome.';if(!ph)return m.textContent='Telemóvel inválido (9 dígitos).';
+ if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em))return m.textContent='Email inválido.';if(!$('consent').checked)return m.textContent='É necessário autorizar o contacto.';
+ var o={brand:b,year:y,km:km,fuel:$('fuel').value,cond:$('cond').value},x=est(o),btn=$('go');btn.disabled=true;
+ fetch(SB+'/rest/v1/rpc/submit_valuation_lead',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_plate:p,p_brand:b,p_model:mo,p_year:y,p_km:km,p_fuel:o.fuel,p_cond:o.cond,p_low:x.low,p_high:x.high,p_name:n,p_phone:ph,p_email:em,p_consent:true})})
+ .then(function(r){return r.json()}).then(function(j){btn.disabled=false;
+  if(j&&j.ok){m.textContent='';var r=$('res');r.style.display='block';r.innerHTML='<strong>'+eur(x.low)+' – '+eur(x.high)+'</strong>Valor indicativo, sujeito a inspeção presencial e sem compromisso. Um stand vai contactá-lo em breve.';$('f').reset();}
+  else m.textContent=j&&j.error==='rate_limit'?'Já recebemos pedidos deste número. Tente mais tarde.':'Não foi possível enviar o pedido. Verifique os dados.';
+ }).catch(function(){btn.disabled=false;m.textContent='Sem ligação. Tente novamente.'});
+});
+</script>
+</body>
+</html>
