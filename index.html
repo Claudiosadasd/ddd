@@ -3240,7 +3240,7 @@ document.getElementById('formRegister').addEventListener('submit',function(e){
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){err.textContent='Email inválido.';return;}
   if(p1.length<8){err.textContent='A palavra-passe deve ter pelo menos 8 caracteres.';return;}
   if(p1!==p2){err.textContent='As palavras-passe não coincidem.';return;}
-  sbReq('/auth/v1/signup',{body:{email:email,password:p1,data:{full_name:name,stand_name:stand}}}).then(function(r){
+  sbReq('/auth/v1/signup?redirect_to='+encodeURIComponent(location.origin+'/'),{body:{email:email,password:p1,data:{full_name:name,stand_name:stand}}}).then(function(r){
     rdone();
     if(!r.ok){err.textContent=sbMsg(r);return}
     if(r.j&&r.j.access_token){sbSaveTok(r.j);var acc=sbAccFrom(r.j,email);acc.terms={version:TERMS_VERSION,at:new Date().toISOString(),professional:true};putAccounts(getAccounts().map(function(x){return x.id===acc.id?acc:x}));enterApp(acc,true,true);return}
@@ -3309,6 +3309,16 @@ ensureDemo().then(function(){
   var em=getSession(),acc=em&&getAccounts().find(function(x){return x.email===em});
   if(acc)enterApp(acc,false);else{showAuth('login');showIntro();}
 }).catch(function(){showAuth('login');showIntro();document.getElementById('loginErr').textContent='Não foi possível iniciar a aplicação neste navegador.'});
+})();
+
+(function(){var h=location.hash||'';if(!/error_description=|type=signup|type=recovery|access_token=/.test(h))return;
+  var q=new URLSearchParams(h.replace(/^#/,'')),ok=!q.get('error')&&!q.get('error_description'),msg;
+  if(ok)msg='Email confirmado com sucesso! Já podes entrar com o teu email e palavra-passe.';
+  else if(/expired|invalid/i.test(q.get('error_description')||''))msg='Esta ligação já foi usada ou expirou. Se já confirmaste o email, entra normalmente com o teu email e palavra-passe.';
+  else msg='Não foi possível confirmar o email. Tenta entrar, ou cria a conta de novo.';
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  function show(){var e=document.getElementById('loginErr');if(!e)return;e.textContent=msg;e.style.color=ok?'#067647':'';e.style.display='block'}
+  [700,2200,4500].forEach(function(t){setTimeout(show,t)});
 })();
 </script>
 
