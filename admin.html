@@ -127,11 +127,11 @@ function vResumo(){return ov().then(function(o){
    kpi(o.stands,'Contas (stands)')+kpi(o.users,'Utilizadores')+kpi(o.free,'Contas Free')+kpi(o.paid,'Contas pagas')+
    kpi(o.unpaid,'Pagamento em atraso')+kpi(o.cancelled,'Canceladas')+kpi(eur(o.mrr_eur),'Receita mensal estimada')+
    kpi(o.listings,'Viaturas no marketplace')+kpi(o.leads,'Pedidos de avaliação')+kpi(o.messages,'Mensagens entre stands')+kpi(o.tickets_open,'Tickets abertos')+'</div>'+
-   '<p class="muted" style="margin-top:14px">A receita estimada usa 19,90 €/mês (Mensal) e 199 €/ano (Anual), com o desconto de parceria de cada conta. Os pagamentos são registados manualmente em “Contas” até existir cobrança automática.</p>';
+   '<p class="muted" style="margin-top:14px">A receita estimada usa 19,90 €/mês (Mensal), 53,70 €/trimestre e 179 €/ano, com o desconto de parceria de cada conta. Os pagamentos são registados manualmente em “Contas” até existir cobrança automática.</p>';
 })}
 
 function pillS(s){return '<span class="pill '+(s==='active'?'good':s==='unpaid'?'bad':'warn')+'">'+({active:'Ativa',unpaid:'Por pagar',cancelled:'Cancelada'}[s]||esc(s))+'</span>'}
-function planN(p){return {free:'Free',pro_mensal:'Pro mensal',pro_anual:'Pro anual'}[p]||esc(p)}
+function planN(p){return {free:'Free',pro_mensal:'Pro mensal',pro_trimestral:'Pro trimestral',pro_anual:'Pro anual'}[p]||esc(p)}
 function vContas(){return call('/rest/v1/rpc/admin_accounts',{method:'POST',body:{}}).then(function(a){
   DATA.acc=a;var q=DATA.q||'',f=DATA.f||'todas';
   var rows=a.filter(function(x){
@@ -149,7 +149,7 @@ function vContas(){return call('/rest/v1/rpc/admin_accounts',{method:'POST',body
 })}
 function editAcc(id){
   var x=DATA.acc.filter(function(a){return a.stand_id===id})[0];
-  $('ed').innerHTML='<div class="card"><h3>'+esc(x.name)+'</h3><div class="row"><div><label>Plano</label><select id="ep">'+['free','pro_mensal','pro_anual'].map(function(p){return '<option value="'+p+'"'+(p===x.plan?' selected':'')+'>'+planN(p)+'</option>'}).join('')+'</select></div>'+
+  $('ed').innerHTML='<div class="card"><h3>'+esc(x.name)+'</h3><div class="row"><div><label>Plano</label><select id="ep">'+['free','pro_mensal','pro_trimestral','pro_anual'].map(function(p){return '<option value="'+p+'"'+(p===x.plan?' selected':'')+'>'+planN(p)+'</option>'}).join('')+'</select></div>'+
   '<div><label>Estado</label><select id="es">'+[['active','Ativa'],['unpaid','Por pagar'],['cancelled','Cancelada']].map(function(p){return '<option value="'+p[0]+'"'+(p[0]===x.status?' selected':'')+'>'+p[1]+'</option>'}).join('')+'</select></div>'+
   '<div><label>Pago até</label><input type="date" id="ed1" value="'+esc(x.paid_until||'')+'"></div><div><label>Código de parceria</label><input id="ec" value="'+esc(x.partner_code||'')+'" placeholder="ex.: STAND10"></div><div><label>Desconto %</label><input id="edp" type="number" min="0" max="100" value="'+x.discount_pct+'"></div></div>'+
   '<p><button class="btn" id="sv">Guardar</button> <button class="btn sec" id="cx">Fechar</button> <span id="em" class="muted"></span></p></div>';
