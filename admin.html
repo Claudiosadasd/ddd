@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://qpythmevcmyogvertqba.supabase.co; base-uri 'none'; form-action 'none'">
+<title>Administração · NEXORA</title>
+<link rel="icon" href="favicon.ico">
+<style>
+:root{--bg:#F2EFE8;--card:#fff;--ink:#0B1630;--muted:#5b6578;--line:#e3ded3;--accent:#2A56E0;--sig:#FF6A2B;--bad:#b42318;--good:#067647;--warn:#b54708}
+@media(prefers-color-scheme:dark){:root{--bg:#0B1630;--card:#142041;--ink:#e8edf6;--muted:#9aa7bd;--line:#24314b;--accent:#5b8def;--bad:#f97066;--good:#47cd89;--warn:#fdb022}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,Segoe UI,Roboto,sans-serif}
+h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top .logo{font-weight:700;letter-spacing:.04em}.top .sp{flex:1}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600}
+nav button.on{background:var(--accent);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi b{display:block;font:700 26px "Space Grotesk",Inter,sans-serif}.kpi span{color:var(--muted);font-size:13px}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer}
+.btn.sec{background:none;color:var(--ink);border:1px solid var(--line)}.btn.bad{background:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+input,select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+label{display:block;font-size:13px;color:var(--muted);margin:8px 0 2px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.scroll{overflow-x:auto}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--line)}
+.pill.good{background:rgba(6,118,71,.15);color:var(--good)}.pill.bad{background:rgba(180,35,24,.15);color:var(--bad)}.pill.warn{background:rgba(181,71,8,.15);color:var(--warn)}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:160px}
+.muted{color:var(--muted);font-size:13px}.err{color:var(--bad);margin-top:8px}
+#login{max-width:380px;margin:12vh auto}
+.hide{display:none!important}
+.chat{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;white-space:pre-wrap}
+.chat p{margin:0 0 8px}.chat .u{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div id="login" class="card">
+  <h1>Administração</h1>
+  <p class="muted">NEXORA AUTO PRO · acesso reservado à gestão</p>
+  <form id="f">
+    <label for="un">Utilizador</label><input id="un" autocomplete="username" required>
+    <label for="pw">Palavra-passe</label><input id="pw" type="password" autocomplete="current-password" required>
+    <p><button class="btn" id="lb" type="submit">Entrar</button></p>
+    <div class="err" id="le"></div>
+  </form>
+</div>
+
+<div id="app" class="hide">
+  <div class="top">
+    <span class="logo">NEXORA · ADMIN</span>
+    <nav id="nav"></nav>
+    <span class="sp"></span>
+    <span class="muted" id="who"></span>
+    <button class="btn sec" id="out">Sair</button>
+  </div>
+  <div class="wrap" id="main"></div>
+</div>
+
+<script>
+var SB='https://qpythmevcmyogvertqba.supabase.co',KEY='sb_publishable_RM3iti36Bxgl-gsX26tIoA_yTTImCzq';
+var S=null,DOMAIN='@admin.nexora.invalid',TAB='resumo',DATA={};
+var $=function(i){return document.getElementById(i)};
+function store(k,v){try{if(v===undefined)return sessionStorage.getItem(k);if(v===null)sessionStorage.removeItem(k);else sessionStorage.setItem(k,v)}catch(e){}return null}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function eur(n){return (Math.round(n*100)/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'})}
+function mb(b){return b>=1073741824?(b/1073741824).toFixed(2)+' GB':(b/1048576).toFixed(1)+' MB'}
+function dt(s){return s?new Date(s).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'}):'—'}
+function api(path,opt){
+  opt=opt||{};var h={apikey:KEY,'Content-Type':'application/json'};
+  h.Authorization='Bearer '+(S?S.access_token:KEY);if(opt.prefer)h.Prefer=opt.prefer;
+  return fetch(SB+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined}).then(function(r){
+    return r.text().then(function(t){var j=null;try{j=t?JSON.parse(t):null}catch(e){}
+      if(!r.ok){var e=new Error((j&&(j.message||j.msg||j.error_description))||('Erro '+r.status));e.status=r.status;throw e}return j})});
+}
+function login(un,pw){
+  return api('/auth/v1/token?grant_type=password',{method:'POST',body:{email:un.toLowerCase().trim()+DOMAIN,password:pw}}).then(function(s){
+    S={access_token:s.access_token,refresh_token:s.refresh_token,exp:Date.now()+s.expires_in*1000-60000};
+    return api('/rest/v1/platform_admins?select=username').then(function(r){
+      if(!r||!r.length){S=null;throw new Error('Esta conta não tem acesso de administração.')}
+      S.username=r[0].username;store('adm',JSON.stringify(S));
+    });
+  });
+}
+function refresh(){
+  if(!S||Date.now()<S.exp)return Promise.resolve();
+  return api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:S.refresh_token}}).then(function(s){
+    S.access_token=s.access_token;S.refresh_token=s.refresh_token;S.exp=Date.now()+s.expires_in*1000-60000;store('adm',JSON.stringify(S));
+  });
+}
+function call(path,opt){return refresh().then(function(){return api(path,opt)})}
+function logout(){S=null;store('adm',null);$('app').classList.add('hide');$('login').classList.remove('hide');$('pw').value=''}
+
+$('f').addEventListener('submit',function(e){
+  e.preventDefault();$('le').textContent='';$('lb').disabled=true;
+  login($('un').value,$('pw').value).then(start).catch(function(er){$('le').textContent=er.status===400?'Utilizador ou palavra-passe incorretos.':er.message}).then(function(){$('lb').disabled=false});
+});
+$('out').onclick=logout;
+
+var TABS=[['resumo','Resumo'],['contas','Contas'],['servidor','Servidor'],['tickets','Tickets'],['parcerias','Parcerias'],['ia','Assistente IA']];
+function start(){
+  $('login').classList.add('hide');$('app').classList.remove('hide');$('who').textContent=S.username;
+  $('nav').innerHTML=TABS.map(function(t){return '<button data-t="'+t[0]+'">'+t[1]+'</button>'}).join('');
+  $('nav').onclick=function(e){var t=e.target.getAttribute('data-t');if(t){TAB=t;render()}};
+  render();
+}
+function render(){
+  [].forEach.call($('nav').children,function(b){b.classList.toggle('on',b.getAttribute('data-t')===TAB)});
+  $('main').innerHTML='<p class="muted">A carregar…</p>';
+  var f={resumo:vResumo,contas:vContas,servidor:vServidor,tickets:vTickets,parcerias:vParcerias,ia:vIA}[TAB];
+  Promise.resolve(f()).catch(function(er){if(er.status===401){logout();return}$('main').innerHTML='<div class="card err">'+esc(er.message)+'</div>'});
+}
+function ov(){return call('/rest/v1/rpc/admin_overview',{method:'POST',body:{}})}
+function kpi(v,l){return '<div class="kpi"><b>'+v+'</b><span>'+esc(l)+'</span></div>'}
+
+function vResumo(){return ov().then(function(o){
+  $('main').innerHTML='<h2>Resumo da empresa</h2><p class="muted">Dados reais da base de dados em '+dt(new Date())+'</p><div class="grid">'+
+   kpi(o.stands,'Contas (stands)')+kpi(o.users,'Utilizadores')+kpi(o.free,'Contas Free')+kpi(o.paid,'Contas pagas')+
+   kpi(o.unpaid,'Pagamento em atraso')+kpi(o.cancelled,'Canceladas')+kpi(eur(o.mrr_eur),'Receita mensal estimada')+
+   kpi(o.listings,'Viaturas no marketplace')+kpi(o.leads,'Pedidos de avaliação')+kpi(o.messages,'Mensagens entre stands')+kpi(o.tickets_open,'Tickets abertos')+'</div>'+
+   '<p class="muted" style="margin-top:14px">A receita estimada usa 19,90 €/mês (Mensal) e 199 €/ano (Anual), com o desconto de parceria de cada conta. Os pagamentos são registados manualmente em “Contas” até existir cobrança automática.</p>';
+})}
+
+function pillS(s){return '<span class="pill '+(s==='active'?'good':s==='unpaid'?'bad':'warn')+'">'+({active:'Ativa',unpaid:'Por pagar',cancelled:'Cancelada'}[s]||esc(s))+'</span>'}
+function planN(p){return {free:'Free',pro_mensal:'Pro mensal',pro_anual:'Pro anual'}[p]||esc(p)}
+function vContas(){return call('/rest/v1/rpc/admin_accounts',{method:'POST',body:{}}).then(function(a){
+  DATA.acc=a;var q=DATA.q||'',f=DATA.f||'todas';
+  var rows=a.filter(function(x){
+    if(f==='free'&&x.plan!=='free')return false;if(f==='pagas'&&!(x.plan!=='free'&&x.status==='active'))return false;if(f==='porpagar'&&x.status!=='unpaid')return false;
+    return !q||(x.name+' '+(x.owner_email||'')+' '+(x.city||'')).toLowerCase().indexOf(q.toLowerCase())>=0});
+  var h='<h2>Contas criadas ('+a.length+')</h2><div class="row card" style="margin-top:12px"><div><label>Procurar</label><input id="q" value="'+esc(q)+'" placeholder="nome, email, cidade"></div><div><label>Filtro</label><select id="flt">'+
+   [['todas','Todas'],['free','Free'],['pagas','Pagas'],['porpagar','Por pagar']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===f?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div></div>'+
+   '<div class="card scroll"><table><tr><th>Stand</th><th>Email do titular</th><th>Plano</th><th>Estado</th><th>Pago até</th><th>Desconto</th><th>Viaturas</th><th>Criada</th><th></th></tr>'+
+   rows.map(function(x){return '<tr><td><b>'+esc(x.name)+'</b><br><span class="muted">'+esc(x.city||'')+'</span></td><td>'+esc(x.owner_email||'—')+'</td><td>'+planN(x.plan)+'</td><td>'+pillS(x.status)+'</td><td>'+esc(x.paid_until||'—')+'</td><td>'+(x.discount_pct?x.discount_pct+'% '+esc(x.partner_code||''):'—')+'</td><td>'+x.listings+'</td><td>'+dt(x.created_at)+'</td><td><button class="btn sec" data-e="'+x.stand_id+'">Gerir</button></td></tr>'}).join('')+
+   (rows.length?'':'<tr><td colspan="9" class="muted">Sem resultados.</td></tr>')+'</table></div><div id="ed"></div>';
+  $('main').innerHTML=h;
+  $('q').oninput=function(){DATA.q=this.value;clearTimeout(DATA.t);DATA.t=setTimeout(vContas,250)};
+  $('flt').onchange=function(){DATA.f=this.value;vContas()};
+  $('main').onclick=function(e){var id=e.target.getAttribute&&e.target.getAttribute('data-e');if(id)editAcc(id)};
+})}
+function editAcc(id){
+  var x=DATA.acc.filter(function(a){return a.stand_id===id})[0];
+  $('ed').innerHTML='<div class="card"><h3>'+esc(x.name)+'</h3><div class="row"><div><label>Plano</label><select id="ep">'+['free','pro_mensal','pro_anual'].map(function(p){return '<option value="'+p+'"'+(p===x.plan?' selected':'')+'>'+planN(p)+'</option>'}).join('')+'</select></div>'+
+  '<div><label>Estado</label><select id="es">'+[['active','Ativa'],['unpaid','Por pagar'],['cancelled','Cancelada']].map(function(p){return '<option value="'+p[0]+'"'+(p[0]===x.status?' selected':'')+'>'+p[1]+'</option>'}).join('')+'</select></div>'+
+  '<div><label>Pago até</label><input type="date" id="ed1" value="'+esc(x.paid_until||'')+'"></div><div><label>Código de parceria</label><input id="ec" value="'+esc(x.partner_code||'')+'" placeholder="ex.: STAND10"></div><div><label>Desconto %</label><input id="edp" type="number" min="0" max="100" value="'+x.discount_pct+'"></div></div>'+
+  '<p><button class="btn" id="sv">Guardar</button> <button class="btn sec" id="cx">Fechar</button> <span id="em" class="muted"></span></p></div>';
+  $('cx').onclick=function(){$('ed').innerHTML=''};
+  $('ec').onchange=function(){var c=this.value.trim().toUpperCase();this.value=c;if(!c)return;
+    call('/rest/v1/partners?select=discount_pct,status&code=eq.'+encodeURIComponent(c)).then(function(r){if(r&&r[0]&&r[0].status==='ativa')$('edp').value=r[0].discount_pct;else $('em').textContent='Código de parceria não encontrado ou inativo.'})};
+  $('sv').onclick=function(){
+    var body={plan:$('ep').value,status:$('es').value,paid_until:$('ed1').value||null,partner_code:$('ec').value.trim().toUpperCase()||null,discount_pct:parseInt($('edp').value,10)||0,updated_at:new Date().toISOString()};
+    $('sv').disabled=true;
+    call('/rest/v1/subscriptions?stand_id=eq.'+id,{method:'PATCH',body:body,prefer:'return=minimal'}).then(function(){vContas()}).catch(function(er){$('em').textContent=er.message;$('sv').disabled=false});
+  };
+  $('ed').scrollIntoView({behavior:'smooth'});
+}
+
+function vServidor(){return ov().then(function(o){
+  var pct=Math.min(100,o.db_bytes/o.db_limit_bytes*100);
+  $('main').innerHTML='<h2>Servidor e recursos</h2><div class="card"><h3>Disco da base de dados</h3><div class="bar"><i style="width:'+pct.toFixed(1)+'%;background:'+(pct>80?'var(--bad)':'var(--accent)')+'"></i></div><p><b>'+mb(o.db_bytes)+'</b> usados de '+mb(o.db_limit_bytes)+' (limite do plano gratuito do Supabase) · '+pct.toFixed(1)+'%</p></div>'+
+   '<div class="grid">'+kpi(o.connections,'Ligações à base de dados')+kpi(o.active_queries,'Consultas ativas agora')+'</div>'+
+   '<div class="card" style="margin-top:12px"><h3>Maiores tabelas</h3><table>'+o.tables.slice(0,8).map(function(t){return '<tr><td>'+esc(t.name)+'</td><td>'+mb(t.bytes)+'</td></tr>'}).join('')+'</table></div>'+
+   '<div class="card"><h3>CPU e memória da máquina</h3><p class="muted">O site está alojado como site estático (Render) e a base de dados no Supabase, ambos serviços geridos, por isso não existe uma “máquina” nossa para medir diretamente a partir desta página. A percentagem de CPU e memória só se vê nos painéis dos próprios serviços (Supabase → Reports; Render → Metrics). Aqui mostramos o que é real e medível: disco da base de dados, ligações e consultas ativas.</p></div>';
+})}
+
+var TS={aberto:'warn',em_curso:'warn',fechado:'good'};
+function vTickets(){return call('/rest/v1/tickets?select=*,stands(name)&order=created_at.desc&limit=200').then(function(t){
+  DATA.tk=t;
+  $('main').innerHTML='<h2>Tickets de suporte ('+t.filter(function(x){return x.status!=='fechado'}).length+' abertos)</h2><div class="card scroll"><table><tr><th>Data</th><th>Stand</th><th>Assunto</th><th>Prioridade</th><th>Estado</th><th></th></tr>'+
+   t.map(function(x){return '<tr><td>'+dt(x.created_at)+'</td><td>'+esc(x.stands?x.stands.name:'—')+'</td><td>'+esc(x.subject)+'</td><td>'+esc(x.priority)+'</td><td><span class="pill '+TS[x.status]+'">'+esc(x.status.replace('_',' '))+'</span></td><td><button class="btn sec" data-t="'+x.id+'">Abrir</button></td></tr>'}).join('')+
+   (t.length?'':'<tr><td colspan="6" class="muted">Ainda não há tickets. Os stands abrem tickets a partir da aplicação.</td></tr>')+'</table></div><div id="td"></div>';
+  $('main').onclick=function(e){var id=e.target.getAttribute&&e.target.getAttribute('data-t');if(id)openTk(id)};
+})}
+function openTk(id){
+  var x=DATA.tk.filter(function(a){return a.id===id})[0];
+  $('td').innerHTML='<div class="card"><h3>'+esc(x.subject)+'</h3><p class="muted">'+esc(x.stands?x.stands.name:'')+' · '+dt(x.created_at)+'</p><p style="white-space:pre-wrap">'+esc(x.body)+'</p>'+
+   '<label>Resposta</label><textarea id="tr" rows="4" maxlength="2000">'+esc(x.admin_reply||'')+'</textarea><div class="row"><div><label>Estado</label><select id="ts">'+[['aberto','Aberto'],['em_curso','Em curso'],['fechado','Fechado']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===x.status?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select></div></div>'+
+   '<p><button class="btn" id="tsv">Guardar</button> <span class="muted" id="tm"></span></p></div>';
+  $('tsv').onclick=function(){call('/rest/v1/tickets?id=eq.'+id,{method:'PATCH',body:{admin_reply:$('tr').value||null,status:$('ts').value,updated_at:new Date().toISOString()},prefer:'return=minimal'}).then(vTickets).catch(function(er){$('tm').textContent=er.message})};
+  $('td').scrollIntoView({behavior:'smooth'});
+}
+
+function vParcerias(){return call('/rest/v1/partners?select=*&order=created_at.desc').then(function(p){
+  $('main').innerHTML='<h2>Parcerias e descontos</h2><p class="muted">Os termos completos estão na página pública <a href="parcerias.html" style="color:var(--accent)">parcerias.html</a>. Cada parceiro tem um código; ao aplicá-lo numa conta (separador Contas) o desconto entra na receita estimada.</p>'+
+   '<div class="card"><h3>Novo parceiro</h3><div class="row"><div><label>Nome</label><input id="pn"></div><div><label>Código (A-Z, 0-9)</label><input id="pc" maxlength="20"></div><div><label>Tipo</label><select id="pk"><option value="stand">Stand</option><option value="grupo">Grupo de stands</option><option value="associacao">Associação</option><option value="fornecedor">Fornecedor</option></select></div><div><label>Desconto %</label><input id="pd" type="number" min="0" max="100" value="10"></div><div><label>Meses</label><input id="pm" type="number" min="1" max="36" value="12"></div></div><p><button class="btn" id="pa">Adicionar</button> <span id="pe" class="err"></span></p></div>'+
+   '<div class="card scroll"><table><tr><th>Parceiro</th><th>Código</th><th>Tipo</th><th>Desconto</th><th>Duração</th><th>Estado</th><th></th></tr>'+
+   p.map(function(x){return '<tr><td>'+esc(x.name)+'</td><td><b>'+esc(x.code)+'</b></td><td>'+esc(x.kind)+'</td><td>'+x.discount_pct+'%</td><td>'+x.months+' meses</td><td>'+esc(x.status)+'</td><td><button class="btn sec" data-p="'+x.id+'" data-s="'+(x.status==='ativa'?'pausada':'ativa')+'">'+(x.status==='ativa'?'Pausar':'Reativar')+'</button></td></tr>'}).join('')+
+   (p.length?'':'<tr><td colspan="7" class="muted">Sem parceiros registados.</td></tr>')+'</table></div>';
+  $('pa').onclick=function(){
+    var b={name:$('pn').value.trim(),code:$('pc').value.trim().toUpperCase(),kind:$('pk').value,discount_pct:parseInt($('pd').value,10),months:parseInt($('pm').value,10)};
+    call('/rest/v1/partners',{method:'POST',body:b,prefer:'return=minimal'}).then(vParcerias).catch(function(er){$('pe').textContent=/duplicate|unique/.test(er.message)?'Esse código já existe.':er.message});
+  };
+  $('main').onclick=function(e){var id=e.target.getAttribute&&e.target.getAttribute('data-p');if(id)call('/rest/v1/partners?id=eq.'+id,{method:'PATCH',body:{status:e.target.getAttribute('data-s')},prefer:'return=minimal'}).then(vParcerias)};
+})}
+
+function vIA(){
+  DATA.chat=DATA.chat||[];
+  $('main').innerHTML='<h2>Assistente IA</h2><p class="muted">Pergunte sobre as contas, tickets ou receita. O assistente recebe um resumo atual dos números da empresa (sem dados pessoais de clientes).</p><div class="card"><div class="chat" id="ch">'+
+   DATA.chat.map(function(m){return '<p><span class="'+(m.r==='u'?'u':'')+'">'+(m.r==='u'?'Você':'IA')+':</span> '+esc(m.t)+'</p>'}).join('')+'</div><div class="row"><textarea id="cm" rows="2" placeholder="Escreva a sua pergunta"></textarea></div><p><button class="btn" id="cs">Enviar</button></p></div>';
+  $('cs').onclick=function(){
+    var t=$('cm').value.trim();if(!t)return;DATA.chat.push({r:'u',t:t});$('cm').value='';$('cs').disabled=true;
+    ov().then(function(o){var ctx={contas:o.stands,utilizadores:o.users,free:o.free,pagas:o.paid,por_pagar:o.unpaid,canceladas:o.cancelled,receita_mensal_estimada_eur:o.mrr_eur,viaturas:o.listings,tickets_abertos:o.tickets_open,disco_bd_mb:Math.round(o.db_bytes/1048576)};
+      return call('/functions/v1/admin-ai',{method:'POST',body:{question:t,context:ctx}})}).then(function(r){DATA.chat.push({r:'a',t:r.answer})}).catch(function(er){DATA.chat.push({r:'a',t:er.status===503?'O assistente ainda não está ligado: falta configurar a chave da API da OpenAI no servidor (secret OPENAI_API_KEY).':'Erro: '+er.message})}).then(vIA);
+  };
+}
+
+(function(){try{var s=JSON.parse(store('adm')||'null');if(s&&s.access_token){S=s;refresh().then(function(){return api('/rest/v1/platform_admins?select=username')}).then(function(r){if(r&&r.length){S.username=r[0].username;start()}else logout()}).catch(logout)}}catch(e){}})();
+</script>
+</body>
+</html>
