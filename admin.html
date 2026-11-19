@@ -106,7 +106,7 @@ $('f').addEventListener('submit',function(e){
 });
 $('out').onclick=logout;
 
-var TABS=[['resumo','Resumo'],['contas','Contas'],['servidor','Servidor'],['tickets','Tickets'],['parcerias','Parcerias'],['ia','Assistente IA']];
+var TABS=[['resumo','Resumo'],['contas','Contas'],['servidor','Servidor'],['chat','Chat'],['tickets','Tickets'],['parcerias','Parcerias'],['ia','Assistente IA']];
 function start(){
   $('login').classList.add('hide');$('app').classList.remove('hide');$('who').textContent=S.username;
   $('nav').innerHTML=TABS.map(function(t){return '<button data-t="'+t[0]+'">'+t[1]+'</button>'}).join('');
@@ -114,9 +114,10 @@ function start(){
   render();
 }
 function render(){
+  clearInterval(DATA.ci);DATA.cur=null;
   [].forEach.call($('nav').children,function(b){b.classList.toggle('on',b.getAttribute('data-t')===TAB)});
   $('main').innerHTML='<p class="muted">A carregar…</p>';
-  var f={resumo:vResumo,contas:vContas,servidor:vServidor,tickets:vTickets,parcerias:vParcerias,ia:vIA}[TAB];
+  var f={resumo:vResumo,contas:vContas,servidor:vServidor,tickets:vTickets,chat:vChat,parcerias:vParcerias,ia:vIA}[TAB];
   Promise.resolve(f()).catch(function(er){if(er.status===401){logout();return}$('main').innerHTML='<div class="card err">'+esc(er.message)+'</div>'});
 }
 function ov(){return call('/rest/v1/rpc/admin_overview',{method:'POST',body:{}})}
@@ -187,6 +188,36 @@ function openTk(id){
    '<p><button class="btn" id="tsv">Guardar</button> <span class="muted" id="tm"></span></p></div>';
   $('tsv').onclick=function(){call('/rest/v1/tickets?id=eq.'+id,{method:'PATCH',body:{admin_reply:$('tr').value||null,status:$('ts').value,updated_at:new Date().toISOString()},prefer:'return=minimal'}).then(vTickets).catch(function(er){$('tm').textContent=er.message})};
   $('td').scrollIntoView({behavior:'smooth'});
+}
+
+function vChat(){
+  function list(){return call('/rest/v1/support_chats?select=*,stands(name)&order=last_msg_at.desc&limit=100')}
+  function conv(){
+    if(!DATA.cur)return Promise.resolve();
+    return call('/rest/v1/support_messages?select=*&chat_id=eq.'+DATA.cur+'&order=id.asc').then(function(m){
+      var box=$('cv');if(!box)return;var atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<80;
+      box.innerHTML=m.map(function(x){return '<p style="text-align:'+(x.sender==='suporte'?'right':'left')+'"><span class="pill '+(x.sender==='suporte'?'good':'')+'" style="white-space:pre-wrap;font-weight:500;padding:6px 11px;border-radius:12px">'+esc(x.body)+'</span><br><span class="muted">'+dt(x.created_at)+'</span></p>'}).join('')||'<p class="muted">Sem mensagens.</p>';
+      if(atEnd)box.scrollTop=box.scrollHeight;
+      return call('/rest/v1/support_chats?id=eq.'+DATA.cur+'&admin_unread=gt.0',{method:'PATCH',body:{admin_unread:0},prefer:'return=minimal'});
+    });
+  }
+  function draw(c){
+    var open=c.filter(function(x){return x.status==='aberto'}).length;
+    $('main').innerHTML='<h2>Chat de suporte ('+open+' abertas)</h2><div class="row" style="align-items:flex-start"><div class="card scroll" style="max-width:340px;flex:0 0 320px"><table>'+
+      c.map(function(x){return '<tr style="cursor:pointer" data-c="'+x.id+'"><td data-c="'+x.id+'"><b>'+esc(x.name)+'</b>'+(x.admin_unread?' <span class="pill bad">'+x.admin_unread+'</span>':'')+'<br><span class="muted">'+esc(x.stands?x.stands.name:(x.source==='conta'?'Cliente com conta':'Visitante'))+' · '+dt(x.last_msg_at)+(x.status==='fechado'?' · fechada':'')+'</span></td></tr>'}).join('')+
+      (c.length?'':'<tr><td class="muted">Ainda ninguém iniciou conversa.</td></tr>')+'</table></div><div class="card" style="flex:2;min-width:280px">'+
+      (DATA.cur?'<div id="cv" style="max-height:380px;overflow:auto;margin-bottom:10px"></div><div class="row"><textarea id="cr" rows="2" maxlength="1000" placeholder="Escreva a resposta"></textarea></div><p><button class="btn" id="cs2">Responder</button> <button class="btn sec" id="cc">'+(c.filter(function(x){return x.id===DATA.cur})[0].status==='aberto'?'Fechar conversa':'Reabrir')+'</button></p>':'<p class="muted">Escolha uma conversa à esquerda.</p>')+'</div></div>';
+    $('main').onclick=function(e){var t=e.target;while(t&&t!==this&&!(t.getAttribute&&t.getAttribute('data-c')))t=t.parentNode;var id=t&&t.getAttribute&&t.getAttribute('data-c');if(id){DATA.cur=id;load()}};
+    if(DATA.cur){
+      conv();
+      $('cs2').onclick=function(){var v=$('cr').value.trim();if(!v)return;$('cs2').disabled=true;call('/rest/v1/support_messages',{method:'POST',body:{chat_id:DATA.cur,sender:'suporte',body:v},prefer:'return=minimal'}).then(load).catch(function(er){alert(er.message)})};
+      $('cc').onclick=function(){var cur=c.filter(function(x){return x.id===DATA.cur})[0];call('/rest/v1/support_chats?id=eq.'+DATA.cur,{method:'PATCH',body:{status:cur.status==='aberto'?'fechado':'aberto'},prefer:'return=minimal'}).then(load)};
+    }
+  }
+  function load(){return list().then(draw)}
+  clearInterval(DATA.ci);
+  DATA.ci=setInterval(function(){if(TAB!=='chat'){clearInterval(DATA.ci);return}var ta=$('cr');if(ta&&(document.activeElement===ta||ta.value)){conv();return}load().catch(function(){})},6000);
+  return load();
 }
 
 function vParcerias(){return call('/rest/v1/partners?select=*&order=created_at.desc').then(function(p){
