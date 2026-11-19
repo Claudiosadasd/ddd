@@ -1,0 +1,13 @@
+name: keepalive
+on:
+  schedule:
+    - cron: "17 */12 * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase e site
+        run: |
+          curl -fsS -m 30 -H "apikey: sb_publishable_RM3iti36Bxgl-gsX26tIoA_yTTImCzq" "https://qpythmevcmyogvertqba.supabase.co/rest/v1/listings?select=id&limit=1" > /dev/null
+          curl -fsS -m 30 -o /dev/null "https://nexora-auto-pro.onrender.com/"
