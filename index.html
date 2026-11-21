@@ -566,6 +566,7 @@ body.locked .bnav{display:none!important}
 .plan-ul{list-style:none;margin:2px 0 6px;padding:0;font-size:12px;color:var(--ink);display:flex;flex-direction:column;gap:3px}.plan-ul li:before{content:"✓ ";color:var(--good);font-weight:700}
 .stripe-box{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card)}.stripe-box p{font-size:12.5px;color:var(--muted);margin:6px 0 10px}.stripe-box code{font-family:var(--mono);background:var(--accent-soft);padding:1px 5px;border-radius:5px}.stripe-box .btn{display:inline-block;text-decoration:none}
 body:not(.is-demo) .acc-demo-only{display:none!important}
+body.is-demo .acc-real-only{display:none!important}
 
 /* ---- intro vídeo ---- */
 .intro{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(4,10,28,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .45s ease}
@@ -943,6 +944,7 @@ body.mob .pwr span{display:none}
         <div class="setting-row admin-only"><div><h4>Base de dados</h4><p id="cloudStatus">A ligar…</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-cloud-save>Guardar agora</button> <button class="btn btn-ghost" type="button" data-cloud-restore>Restaurar</button></span></div>
         <div class="setting-row admin-only"><div><h4>Stock para portais automóvel</h4><p>Gera o ficheiro com as viaturas disponíveis (matrícula, marca, modelo, versão, ano, km, combustível, cor, preço) para enviar a portais como Standvirtual, OLX ou CustoJusto. O endereço automático (URL que o portal consulta sozinho) e a ligação direta às contas dos portais só existem na versão com servidor.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-portal-feed="csv">Copiar CSV</button> <button class="btn btn-ghost" type="button" data-portal-feed="xml">Copiar XML</button></span></div>
         <div class="setting-row admin-only acc-demo-only"><div><h4>Repor dados da conta demo</h4><p>Restaura os dados iniciais da conta e apaga o que foi criado neste navegador (as contas de vendedor mantêm-se).</p></div><span class="meta"><button class="btn btn-ghost" id="btnSeed2">↺ Repor dados</button></span></div>
+        <div class="setting-row admin-only acc-real-only"><div><h4>Eliminar a minha conta e os dados</h4><p>Apaga definitivamente a conta, o stand, todos os registos, anúncios, mensagens e as contas de vendedor associadas, nos nossos servidores e neste navegador (direito ao apagamento, RGPD). Não é possível recuperar. Exporte antes uma cópia de segurança.</p></div><span class="meta"><button class="btn btn-ghost" id="btnDelAcc" style="color:#b42318">Eliminar conta</button></span></div>
         <div class="audit-box admin-only" id="auditBox"></div>
       </div>
     </section>
@@ -1240,7 +1242,8 @@ function renderModal(cfg,values,errorMsg){
     var cls='field'+(f.full?' full':'');
     var input;
     if(f.type==='select'||f.type==='ref'){
-      input='<select data-field="'+f.k+'"'+(f.req?' required':'')+'>'+fieldOptionsHtml(f,values)+'</select>';
+      var _oh=fieldOptionsHtml(f,values);
+      input='<select data-field="'+f.k+'"'+(f.req?' required':'')+'>'+_oh+'</select>'+((f.type==='ref'&&(_oh.match(/<option/g)||[]).length<2)?'<div class="field-note" style="font-size:11.5px;color:#b42318;margin-top:4px">'+(f.ref==='sellers'?'Ainda não existe nenhum vendedor. Adicione primeiro um vendedor em Definições → Equipa.':'Ainda não existe nenhum registo para escolher. Crie primeiro um em '+(f.ref==='vehicles'?'Parque Automóvel':'Clientes')+'.')+'</div>':'');
     }else if(f.type==='textarea'){
       input='<textarea data-field="'+f.k+'" placeholder="Opcional">'+escapeHtml(values[f.k]||'')+'</textarea>';
     }else{
@@ -1285,6 +1288,24 @@ function readFormValues(cfg){
 }
 
 function validateRecord(res,v,editing){
+  var _cy=new Date().getFullYear();
+  for(var _k in v){if(typeof v[_k]==='string'&&v[_k].length>(_k==='notes'||_k==='description'?2000:200))return 'Texto demasiado longo num dos campos.';if(typeof v[_k]==='number'&&!isFinite(v[_k]))return 'Valor numérico inválido.';}
+  if(res==='customers'||res==='suppliers'||res==='sellers'){
+    if(v.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email))return 'Email inválido.';
+    if(v.phone&&!/^[+0-9 ().-]{6,20}$/.test(v.phone))return 'Telefone inválido (use apenas números, espaços e +).';
+    if(res==='customers'&&v.email&&STORE.customers.some(function(x){return x.id!==editing&&x.email&&x.email.toLowerCase()===v.email.toLowerCase()}))return 'Já existe um cliente com este email.';
+    if(res==='suppliers'&&v.taxId&&!/^[0-9]{9}$/.test(String(v.taxId).replace(/\s/g,'')))return 'O NIF deve ter 9 dígitos.';
+  }
+  if(res==='vehicles'){
+    if(v.plate&&!/^[A-Za-z0-9]{2}[- ]?[A-Za-z0-9]{2}[- ]?[A-Za-z0-9]{2}$/.test(v.plate.trim()))return 'Matrícula inválida (formato português, ex.: 12-AB-34).';
+    if(v.km!=null&&!(v.km>=0&&v.km<=2000000))return 'Quilómetros inválidos.';
+    if(v.year!=null&&!(v.year>=1900&&v.year<=_cy+1))return 'Ano da viatura inválido (1900–'+(_cy+1)+').';
+    if(v.owners!=null&&!(v.owners>=0&&v.owners<=30))return 'Número de donos inválido.';
+    if(v.power!=null&&!(v.power>=0&&v.power<=3000))return 'Potência inválida.';
+    if(!(v.askingCents>0))return 'O preço de venda anunciado tem de ser superior a 0.';
+    if(v.purchaseCents<0||v.askingCents<0)return 'Os valores não podem ser negativos.';
+  }
+  if((res==='costs'||res==='damages'||res==='iuc')&&(v.amountCents<0||v.estimatedCents<0||v.actualCents<0))return 'Os valores não podem ser negativos.';
   if(res==='vehicles'){
     if(v.plate&&STORE.vehicles.some(function(x){return x.id!==editing&&x.plate&&x.plate.toUpperCase()===v.plate.toUpperCase()}))return 'Já existe uma viatura com esta matrícula neste stand.';
     if(!editing&&activeCount()>=planLimit())return 'Limite do plano '+(STORE.plan==='pro'?'Pro':'Free')+' atingido ('+planLimit()+' viaturas ativas). '+(STORE.plan==='pro'?'Venda ou liberte uma viatura para continuar.':'Passe ao plano Pro (viaturas ilimitadas) em Atualizar plano.');
@@ -3204,6 +3225,14 @@ document.addEventListener('click',function(e){
   if(e.target.id==='legalAccept'){hideLegal();if(pendingAcc){var pa=pendingAcc;pendingAcc=null;recordTerms(pa.acc);enterApp(pa.acc,pa.welcome,true);}return;}
   var t=e.target.closest('[data-auth-tab]');if(t){showAuth(t.getAttribute('data-auth-tab'));return;}
   var pw=e.target.closest('[data-pw-toggle]');if(pw){var i=document.getElementById(pw.getAttribute('data-pw-toggle'));var show=i.type==='password';i.type=show?'text':'password';pw.textContent=show?'Esconder':'Mostrar';return;}
+  if(e.target.closest('#btnDelAcc')){askConfirm('Eliminar DEFINITIVAMENTE a conta, o stand e todos os dados (incluindo contas de vendedor)? Não é possível recuperar.',function(){askConfirm('Última confirmação: tem mesmo a certeza que quer apagar tudo?',function(){
+    var tk=sbTok();if(!tk||!tk.a){toast('Sessão expirada. Entre novamente e repita.','err');return}
+    fetch(SB_URL+'/rest/v1/rpc/delete_my_account',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+tk.a,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json().catch(function(){return {}}).then(function(j){
+      if(!r.ok){toast((j&&j.message)||'Não foi possível eliminar a conta.','err');return}
+      try{Object.keys(localStorage).filter(function(k){return k.indexOf('nexora')===0}).forEach(function(k){localStorage.removeItem(k)})}catch(x){}
+      location.reload();
+    })}).catch(function(){toast('Sem ligação ao servidor.','err')});
+  },'Apagar tudo')},'Continuar');return;}
   if(e.target.closest('#btnLogout')){askConfirm('Desligar e sair desta conta? Os dados ficam guardados neste dispositivo.',logout,'Desligar');return;}
 });
 document.getElementById('formLogin').addEventListener('submit',function(e){
