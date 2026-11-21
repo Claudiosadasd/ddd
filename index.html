@@ -3252,6 +3252,9 @@ document.getElementById('formRegister').addEventListener('submit',function(e){
   regCall({action:'register',email:email,password:p1,full_name:name,stand_name:stand}).then(function(r){
     rdone();
     if(!r.ok){err.textContent=(r.j&&r.j.error)||'Não foi possível criar a conta.';return}
+    if(r.j&&r.j.confirmed){return sbReq('/auth/v1/token?grant_type=password',{body:{email:email,password:p1}}).then(function(t){
+      if(t.ok){sbSaveTok(t.j);var acc=sbAccFrom(t.j,email);acc.terms={version:TERMS_VERSION,at:new Date().toISOString(),professional:true};putAccounts(getAccounts().map(function(x){return x.id===acc.id?acc:x}));enterApp(acc,true,true)}
+      else{showAuth('login');var le=document.getElementById('loginErr');le.style.color='#067647';le.textContent='Conta criada! Já podes entrar.'}})}
     openCode(email,p1);
   }).catch(function(){rdone();err.style.color='';err.textContent='Sem ligação ao servidor. Verifica a internet.'});
 });
