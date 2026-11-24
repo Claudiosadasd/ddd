@@ -504,7 +504,7 @@ body:not(.locked) #devPill{display:none}
 #devPill button.active,.devseg button.active{background:var(--navy);color:#fff}
 #devBtn svg{display:block}
 .bnav{display:none}
-body.mob{background:#dfe5f1;overflow-x:hidden}html:has(body.mob){overflow-x:hidden}
+body.mob{background:#dfe5f1;overflow-x:hidden;overflow-x:clip}html:has(body.mob){overflow-x:hidden}
 body.mob.locked{background:var(--surface)}
 body.mob .app{display:block;max-width:430px;margin:0 auto;background:var(--surface);min-height:100vh;box-shadow:0 0 0 1px var(--line),0 30px 80px #0a1a3a26}
 body.mob .rail{position:fixed;left:max(0px,calc(50% - 215px));top:0;z-index:40;transform:translateX(-100%);transition:transform .18s ease;box-shadow:0 20px 60px #0006;height:100vh;height:100dvh}
@@ -606,7 +606,8 @@ body.is-demo .acc-real-only{display:none!important}
 /* scroll mais fluido no telemóvel (só melhora; sem efeito em navegadores sem suporte) */
 html{scroll-behavior:smooth;scroll-padding-top:70px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-.modal,.notif-panel,.rail-nav,.t-scroll,.dsr-nav,.table-wrap,.auth{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.modal,.notif-panel,.rail-nav,.auth{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.t-scroll,.table-wrap,.dsr-nav{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;overscroll-behavior-y:auto}
 body.mob{-webkit-tap-highlight-color:transparent}
 body.mob .bnav,body.mob .topbar{will-change:transform}
 @keyframes scrIn{from{opacity:.25;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -616,7 +617,7 @@ body.mob .bnav,body.mob .topbar{will-change:transform}
   }
 }
 html.is-app{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
-html.is-app body{-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+html.is-app body{-webkit-user-select:none;user-select:none}
 html.is-app input,html.is-app textarea,html.is-app [contenteditable]{-webkit-user-select:text;user-select:text}
 html.is-app .app-hide{display:none!important}
 html.is-app body.mob{background:var(--surface)}
@@ -973,7 +974,7 @@ body.mob .pwr span{display:none}
         <div class="setting-row admin-only"><div><h4>Exportar dados</h4><p>Copia os registos em formato CSV (colar no Excel ou Numbers).</p></div><span class="meta"><button class="btn btn-ghost" data-csv="vehicles">Copiar CSV</button></span></div>
         <div class="setting-row"><div><h4>Visualização</h4><p>Escolhe como queres usar a plataforma: layout de telemóvel (com barra inferior e botões maiores) ou de computador. A escolha fica guardada neste navegador.</p></div><span class="meta"><span class="devseg"><button type="button" data-device="phone">Telemóvel</button><button type="button" data-device="desk">Computador</button></span></span></div>
         <div class="setting-row admin-only"><div><h4>Documentos da empresa</h4><p>Alvará IMT, certidão permanente, seguros, contratos e documentos fiscais num só local.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-files="org|org">Abrir documentos</button></span></div>
-        <div class="setting-row admin-only"><div><h4>Cópia de segurança</h4><p>Descarrega um ZIP com uma pasta por cliente (ficha, vendas e documentos), ou copia todos os dados num texto (JSON) para restaurar quando quiseres.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-backup-zip>⬇ ZIP por cliente</button> <button class="btn btn-ghost" type="button" data-backup-copy>Copiar cópia</button> <button class="btn btn-ghost" type="button" data-backup-restore>Restaurar</button></span></div>
+        <div class="setting-row admin-only"><div><h4>Cópia de segurança</h4><p>Descarrega um ZIP com uma pasta por cliente (ficha, vendas e documentos), ou usa «Copiar cópia»: copia os dados em texto (JSON) e descarrega automaticamente um pacote com tudo da conta (Word, PDF, PNG, CSV e JSON).</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-backup-zip>⬇ ZIP por cliente</button> <button class="btn btn-ghost" type="button" data-backup-copy>Copiar cópia</button> <button class="btn btn-ghost" type="button" data-backup-restore>Restaurar</button></span></div>
         <div class="setting-row admin-only"><div><h4>Base de dados</h4><p id="cloudStatus">A ligar…</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-cloud-save>Guardar agora</button> <button class="btn btn-ghost" type="button" data-cloud-restore>Restaurar</button></span></div>
         <div class="setting-row admin-only"><div><h4>Stock para portais automóvel</h4><p>Gera o ficheiro com as viaturas disponíveis (matrícula, marca, modelo, versão, ano, km, combustível, cor, preço) para enviar a portais como Standvirtual, OLX ou CustoJusto. O endereço automático (URL que o portal consulta sozinho) e a ligação direta às contas dos portais só existem na versão com servidor.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-portal-feed="csv">Copiar CSV</button> <button class="btn btn-ghost" type="button" data-portal-feed="xml">Copiar XML</button></span></div>
         <div class="setting-row admin-only acc-demo-only"><div><h4>Repor dados da conta demo</h4><p>Restaura os dados iniciais da conta e apaga o que foi criado neste navegador (as contas de vendedor mantêm-se).</p></div><span class="meta"><button class="btn btn-ghost" id="btnSeed2">↺ Repor dados</button></span></div>
@@ -1871,7 +1872,7 @@ function renderAll(){
 function toCsv(resource){
   var rows=STORE[resource];if(!rows||!rows.length)return null;
   var keys=Object.keys(rows[0]);
-  var q=function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'};
+  var q=function(v){var t=String(v==null?'':v);if(typeof v==='string'&&/^[=+\-@\t\r]/.test(t))t="'"+t;return '"'+t.replace(/"/g,'""')+'"'};
   return keys.join(';')+'\r\n'+rows.map(function(r){return keys.map(function(k){return q(r[k])}).join(';')}).join('\r\n');
 }
 function copyText(text,okMsg,title,fname,mime){
@@ -2949,7 +2950,7 @@ document.addEventListener('click',function(e){
   x=t.closest('.bn-item[data-view]');if(x){location.hash='#'+x.getAttribute('data-view');return;}
   if(t.closest('[data-open-menu]')){openMenu();return;}
   if(t.closest('[data-backup-zip]')){exportZipPorCliente();return;}
-  if(t.closest('[data-backup-copy]')){if(!isAdmin())return;var js=JSON.stringify(STORE);copyText(js,'Cópia de segurança copiada. Guarda o texto num sítio seguro.','Cópia de segurança','nexora-backup.json','application/json');return;}
+  if(t.closest('[data-backup-copy]')){if(!isAdmin())return;var js=JSON.stringify(STORE);copyText(js,'Cópia de segurança copiada. A descarregar também o pacote completo da conta…','Cópia de segurança','nexora-backup.json','application/json');exportZipPorCliente({pack:true});return;}
   if(t.closest('[data-backup-restore]')){if(!isAdmin())return;document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:560px"><div class="modal-head"><div><span>CÓPIA DE SEGURANÇA</span><h2>Restaurar dados</h2></div><button id="modalClose" aria-label="Fechar">×</button></div><div style="padding:18px 24px 22px"><p class="rgpd-note" style="margin:0 0 10px">Cola o texto da cópia. Isto substitui todos os dados atuais deste stand.</p><textarea id="bkText" rows="7" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px;font:12px var(--mono)"></textarea><div class="modal-error" id="bkErr" hidden></div><div class="modal-actions" style="padding:14px 0 0"><button type="button" class="btn btn-ghost" id="bkCancel">Cancelar</button><button type="button" class="btn btn-primary" data-backup-apply>Restaurar</button></div></div></div></div>';document.getElementById('modalClose').onclick=closeForm;document.getElementById('bkCancel').onclick=closeForm;return;}
   if(t.closest('[data-backup-apply]')){if(!isAdmin())return;var err=document.getElementById('bkErr'),d;try{d=JSON.parse(document.getElementById('bkText').value)}catch(e2){d=null}
     if(!d||!Array.isArray(d.vehicles)||!Array.isArray(d.sellers)||!d.sellers.length||!d.sellers.every(function(z){return z&&typeof z==='object'})||!d.sellers.some(function(z){return z.role==='owner'})||['vehicles','sellers','customers','sales','costs','damages','iuc','suppliers','tasks','files','notifications','vlogs','leads','targets','activity','audit'].some(function(k){return d[k]!==undefined&&!Array.isArray(d[k])})){err.textContent='Texto inválido: não parece uma cópia de segurança NEXORA.';err.hidden=false;return;}
@@ -3442,10 +3443,11 @@ function zipUnique(used,name){
   var cand=name;while(used[cand.toLowerCase()]){cand=base+' ('+(i++)+')'+ext}
   used[cand.toLowerCase()]=1;return cand;
 }
-function exportZipPorCliente(){
+function exportZipPorCliente(opts){
+  opts=opts||{};
   if(!isAdmin())return;
   if(typeof Blob==='undefined'||typeof TextEncoder==='undefined'){toast('Este navegador não suporta ZIP. Usa «Copiar cópia».','err');return}
-  toast('A preparar o ZIP… pode demorar se houver muitos ficheiros.','ok');
+  toast(opts.pack?'A preparar o pacote completo (Word, PDF, PNG, CSV e JSON)…':'A preparar o ZIP… pode demorar se houver muitos ficheiros.','ok');
   var enc=new TextEncoder(),z=new ZipWriter(),missing=[],usedTop={},
       money=function(c){return (Number(c||0)/100).toFixed(2).replace('.',',')+' €'},
       veh=function(id){return (STORE.vehicles||[]).find(function(v){return v.id===id})},
@@ -3495,18 +3497,180 @@ function exportZipPorCliente(){
     });
     return p;
   }).then(function(){
+    return opts.pack?pkAddReports(z,put):null;
+  }).then(function(){
     var R=['COPIA DE SEGURANÇA NEXORA',new Date().toLocaleString('pt-PT'),'',
+      opts.pack?'PACOTE COMPLETO: Relatorio-da-conta.docx (Word), Relatorio-da-conta.pdf, Resumo-da-conta.png e a pasta «dados» (dados-completos.json e um CSV por tabela, abertos no Excel).':'',
       'Cada pasta tem o nome de um cliente, com a ficha (ficha.txt), os dados (dados.json), os documentos e os contratos das vendas.',
       'A pasta «_Stand (dados gerais)» tem a cópia completa (cópia-completa.json) e os restantes ficheiros (viaturas, despesas, danos, etc.).',
       'Para restaurar, abre cópia-completa.json e cola o texto em Definições › Cópia de segurança › Restaurar.'];
     if(missing.length){R.push('','FICHEIROS QUE NÃO FOI POSSÍVEL INCLUIR ('+missing.length+'):');missing.forEach(function(m){R.push('- '+m)})}
     put('LEIA-ME.txt',R.join('\r\n'));
-    var blob=z.finish(),url=URL.createObjectURL(blob),a=document.createElement('a'),d=new Date();
-    a.href=url;a.download='nexora-copia-por-cliente-'+d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'.zip';
-    document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
-    audit('Cópia de segurança em ZIP descarregada');
-    toast('ZIP pronto: '+customers.length+' pastas de clientes'+(missing.length?' ('+missing.length+' ficheiros em falta)':'')+'.','ok');
+    var blob=z.finish(),d=new Date(),
+        fname=(opts.pack?'nexora-pacote-completo-':'nexora-copia-por-cliente-')+d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'.zip';
+    return pkSave(blob,fname).then(function(){
+      audit(opts.pack?'Pacote completo da conta descarregado':'Cópia de segurança em ZIP descarregada');
+      toast((opts.pack?'Pacote completo pronto (Word, PDF, PNG, CSV e JSON)':'ZIP pronto: '+customers.length+' pastas de clientes')+(missing.length?' ('+missing.length+' ficheiros em falta)':'')+'.','ok');
+    });
   }).catch(function(){toast('Não foi possível criar o ZIP. Tenta de novo ou usa «Copiar cópia».','err')});
+}
+/* ---------------- pacote completo da conta (Word, PDF, PNG, CSV, JSON) ---------------- */
+function pkMoney(c){return (Number(c||0)/100).toFixed(2).replace('.',',')+' €'}
+function pkModel(){
+  var S=STORE,org=S.org||{},vm={},cm={};
+  (S.vehicles||[]).forEach(function(v){vm[v.id]=v});(S.customers||[]).forEach(function(c){cm[c.id]=c});
+  var vl=function(id){var v=vm[id];return v?(v.brand+' '+v.model+(v.plate?' ('+v.plate+')':'')):'—'},
+      cn=function(id){return cm[id]?cm[id].name:'—'},
+      sum=function(a,k){return (a||[]).reduce(function(t,x){return t+(Number(x[k])||0)},0)},
+      avail=(S.vehicles||[]).filter(function(v){return v.status==='Disponível'}),
+      name=org.name||(typeof CUR_ACC!=='undefined'&&CUR_ACC&&CUR_ACC.stand)||'Stand';
+  var kpis=[['Viaturas registadas',String((S.vehicles||[]).length)],['Viaturas disponíveis',String(avail.length)],['Valor em stock',pkMoney(sum(avail,'askingCents'))],['Clientes',String((S.customers||[]).length)],['Vendas registadas',String((S.sales||[]).length)],['Total vendido',pkMoney(sum(S.sales,'priceCents'))],['Despesas registadas',String((S.costs||[]).length)],['Total de despesas',pkMoney(sum(S.costs,'amountCents'))]];
+  var A=function(k){return S[k]||[]};
+  var T=[
+    {h:'Viaturas',cols:['Marca','Modelo','Versão','Matrícula','Ano','Km','Combustível','Estado','Compra','Venda anunciada'],rows:A('vehicles').map(function(v){return [v.brand,v.model,v.version,v.plate,v.year,v.km,v.fuel,v.status,pkMoney(v.purchaseCents),pkMoney(v.askingCents)]})},
+    {h:'Clientes',cols:['Nome','Email','Telefone','Localidade','Observações'],rows:A('customers').map(function(c){return [c.name,c.email,c.phone,c.city,c.notes]})},
+    {h:'Oportunidades',cols:['Cliente','Viatura','Estado','Origem','Notas'],rows:A('leads').map(function(l){return [cn(l.customerId),vl(l.vehicleId),l.status,l.source,l.notes]})},
+    {h:'Vendas',cols:['Data','Cliente','Viatura','Preço','Pagamento','Estado'],rows:A('sales').map(function(s){return [s.date,cn(s.customerId),vl(s.vehicleId),pkMoney(s.priceCents),s.paymentStatus,s.status]})},
+    {h:'Despesas',cols:['Data','Viatura','Categoria','Descrição','Valor'],rows:A('costs').map(function(c){return [c.date,vl(c.vehicleId),c.category,c.description,pkMoney(c.amountCents)]})},
+    {h:'Danos',cols:['Data','Viatura','Categoria','Gravidade','Estado','Descrição','Estimado','Real'],rows:A('damages').map(function(d){return [d.date,vl(d.vehicleId),d.category,d.severity,d.status,d.description,pkMoney(d.estimatedCents),pkMoney(d.actualCents)]})},
+    {h:'Fornecedores',cols:['Nome','NIF','Categoria','Telefone','Email'],rows:A('suppliers').map(function(s){return [s.name,s.taxId,s.category,s.phone,s.email]})},
+    {h:'Tarefas',cols:['Título','Viatura','Prazo','Prioridade','Estado'],rows:A('tasks').map(function(t){return [t.title,vl(t.vehicleId),t.dueOn,t.priority,t.status]})},
+    {h:'IUC',cols:['Viatura','Ano','Valor','Vencimento','Referência'],rows:A('iuc').map(function(i){return [vl(i.vehicleId),i.year,pkMoney(i.amountCents),i.dueDate,i.reference]})},
+    {h:'Vendedores',cols:['Nome','Perfil','Email','Telefone','Ativo'],rows:A('sellers').map(function(s){return [s.name,s.role,s.email,s.phone,s.active===false?'Não':'Sim']})}
+  ];
+  T.forEach(function(t){t.rows=t.rows.map(function(r){return r.map(function(x){return x==null||x===''?'':String(x)})})});
+  return {org:name,date:new Date().toLocaleString('pt-PT'),title:'Relatório da conta — '+name,kpis:kpis,tables:T,top:avail.slice(0,7).map(function(v){return [v.brand+' '+v.model+(v.year?' · '+v.year:''),pkMoney(v.askingCents)]})};
+}
+function pkXml(s){return String(s==null?'':s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f￾￿]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function pkDocx(m){
+  var enc=new TextEncoder(),w=15398;
+  function P(t,o){o=o||{};return '<w:p><w:pPr>'+(o.keep?'<w:keepNext/>':'')+'<w:spacing w:before="'+(o.before||0)+'" w:after="'+(o.after==null?80:o.after)+'"/>'+(o.lvl!=null?'<w:outlineLvl w:val="'+o.lvl+'"/>':'')+'</w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>'+(o.bold?'<w:b/>':'')+(o.color?'<w:color w:val="'+o.color+'"/>':'')+'<w:sz w:val="'+(o.sz||20)+'"/></w:rPr><w:t xml:space="preserve">'+pkXml(t)+'</w:t></w:r></w:p>'}
+  function TBL(cols,rows){
+    var cw=Math.floor(w/cols.length),bd=function(n){return '<w:'+n+' w:val="single" w:sz="4" w:space="0" w:color="C8CFDC"/>'};
+    var x='<w:tbl><w:tblPr><w:tblW w:w="'+(cw*cols.length)+'" w:type="dxa"/><w:tblBorders>'+bd('top')+bd('left')+bd('bottom')+bd('right')+bd('insideH')+bd('insideV')+'</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="70" w:type="dxa"/><w:right w:w="70" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>'+cols.map(function(){return '<w:gridCol w:w="'+cw+'"/>'}).join('')+'</w:tblGrid>';
+    function row(cells,head){return '<w:tr><w:trPr><w:cantSplit/>'+(head?'<w:tblHeader/>':'')+'</w:trPr>'+cells.map(function(c){return '<w:tc><w:tcPr><w:tcW w:w="'+cw+'" w:type="dxa"/>'+(head?'<w:shd w:val="clear" w:color="auto" w:fill="E8EEFB"/>':'')+'</w:tcPr>'+P(c,{sz:16,after:0,bold:head})+'</w:tc>'}).join('')+'</w:tr>'}
+    x+=row(cols,true);rows.forEach(function(r){x+=row(r,false)});return x+'</w:tbl>';
+  }
+  var b=P(m.title,{sz:36,bold:true,color:'0A1946',after:60,lvl:0})+P('Gerado em '+m.date+' · Nexora Auto Pro',{sz:18,color:'5B6578',after:240})+P('Resumo',{sz:26,bold:true,color:'2A56E0',after:100,keep:true,lvl:1})+TBL(['Indicador','Valor'],m.kpis);
+  m.tables.forEach(function(t){
+    b+=P(t.h+' ('+t.rows.length+')',{sz:26,bold:true,color:'2A56E0',before:320,after:100,keep:true,lvl:1});
+    b+=t.rows.length?TBL(t.cols,t.rows):P('Sem registos.',{sz:18,color:'5B6578'});
+  });
+  b+=P('Os documentos e contratos anexados estão nas pastas de cada cliente deste pacote.',{sz:16,color:'5B6578',before:240});
+  var doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+b+'<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="400" w:footer="400" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  var z=new ZipWriter();
+  z.add('[Content_Types].xml',enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'));
+  z.add('_rels/.rels',enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'));
+  z.add('word/document.xml',enc.encode(doc));
+  return z.finish();
+}
+function pkPdfStr(s){var X={'Š':'\u008a','š':'\u009a','Ž':'\u008e','ž':'\u009e','Œ':'\u008c','œ':'\u009c','Ÿ':'\u009f','€':'\u0080','–':'-','—':'-','‘':"'",'’':"'",'“':'"','”':'"','…':'...'};return String(s==null?'':s).replace(/[ŠšŽžŒœŸ€–—‘’“”…]/g,function(c){return X[c]}).replace(/[\u0000-\u001f]/g,' ').replace(/[^\u0000-ÿ]/g,function(c){var d=c.normalize('NFD').replace(/[̀-ͯ]/g,'');return /^[ -~]+$/.test(d)?d:'?'}).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
+function pkWrap(s,n){
+  s=String(s==null?'':s);var out=[],words=s.split(/\s+/),line='';
+  words.forEach(function(w){
+    while(w.length>n){if(line){out.push(line);line=''}out.push(w.slice(0,n));w=w.slice(n)}
+    if(!line)line=w;else if((line+' '+w).length<=n)line+=' '+w;else{out.push(line);line=w}
+  });
+  out.push(line);return out.length?out:[''];
+}
+function pkPdf(m){
+  var W=842,H=595,M=36,pages=[],cur,y,FS=8,LD=10,CW=FS*0.56;
+  function np(){cur=[];pages.push(cur);y=H-M-6}
+  function T(x,yy,s,sz,bold){cur.push('BT /F'+(bold?2:1)+' '+sz+' Tf '+x.toFixed(1)+' '+yy.toFixed(1)+' Td ('+pkPdfStr(s)+') Tj ET')}
+  function table(cols,rows){
+    var wts=cols.map(function(c,i){var mx=c.length;rows.forEach(function(r){mx=Math.max(mx,String(r[i]||'').length)});return Math.max(6,Math.min(30,mx))}),
+        tot=wts.reduce(function(a,b){return a+b},0),avail=W-2*M,cw=wts.map(function(x){return avail*x/tot});
+    function head(){
+      var h=LD+6;if(y-h<M+24)np();
+      cur.push('0.91 0.93 0.98 rg '+M+' '+(y-h+3).toFixed(1)+' '+avail.toFixed(1)+' '+h+' re f 0 g');
+      var x=M;cols.forEach(function(c,i){T(x+3,y-LD+1,pkWrap(c,Math.floor((cw[i]-6)/CW))[0],FS,true);x+=cw[i]});y-=h;
+    }
+    head();
+    rows.forEach(function(r){
+      var cells=r.map(function(c,i){return pkWrap(c,Math.max(3,Math.floor((cw[i]-6)/CW)))}),nl=Math.max.apply(null,cells.map(function(c){return c.length})),rh=nl*LD+4;
+      if(y-rh<M+24){np();head()}
+      var x=M;cells.forEach(function(ls,i){ls.forEach(function(l,k){T(x+3,y-LD+1-k*LD,l,FS,false)});x+=cw[i]});
+      y-=rh;cur.push('0.82 0.85 0.9 RG 0.4 w '+M+' '+(y+2).toFixed(1)+' m '+(W-M)+' '+(y+2).toFixed(1)+' l S');
+    });
+    y-=8;
+  }
+  np();
+  T(M,y-10,m.title,18,true);y-=26;T(M,y-4,'Gerado em '+m.date+' · Nexora Auto Pro',9,false);y-=26;
+  T(M,y,'Resumo',13,true);y-=10;table(['Indicador','Valor'],m.kpis);
+  m.tables.forEach(function(t){
+    if(y<M+80)np();
+    y-=6;T(M,y,t.h+' ('+t.rows.length+')',13,true);y-=10;
+    if(t.rows.length)table(t.cols,t.rows);else{T(M,y-8,'Sem registos.',FS,false);y-=18}
+  });
+  var N=pages.length;
+  pages.forEach(function(p,i){cur=p;T(W-M-120,M-14,'Página '+(i+1)+' de '+N,8,false);T(M,M-14,'Nexora Auto Pro — '+m.org,8,false)});
+  var objs=[],add=function(s){objs.push(s);return objs.length};
+  add('<< /Type /Catalog /Pages 2 0 R >>');add('PAGES');
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  var kids=[];
+  pages.forEach(function(p){
+    var s=p.join('\n'),pid=objs.length+1,cid=pid+1;kids.push(pid+' 0 R');
+    add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+W+' '+H+'] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents '+cid+' 0 R >>');
+    add('<< /Length '+s.length+' >>\nstream\n'+s+'\nendstream');
+  });
+  objs[1]='<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+kids.length+' >>';
+  var out='%PDF-1.4\n',offs=[];
+  objs.forEach(function(o,i){offs.push(out.length);out+=(i+1)+' 0 obj\n'+o+'\nendobj\n'});
+  var xr=out.length;out+='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n';
+  offs.forEach(function(o){out+=('0000000000'+o).slice(-10)+' 00000 n \n'});
+  out+='trailer\n<< /Size '+(objs.length+1)+' /Root 1 0 R >>\nstartxref\n'+xr+'\n%%EOF';
+  var u=new Uint8Array(out.length);for(var i=0;i<out.length;i++)u[i]=out.charCodeAt(i)&255;
+  return new Blob([u],{type:'application/pdf'});
+}
+function pkPng(m){
+  return new Promise(function(res){
+    try{
+      var c=document.createElement('canvas');c.width=1200;c.height=860;var g=c.getContext('2d'),F='Arial, Helvetica, sans-serif';
+      g.fillStyle='#f4f6fb';g.fillRect(0,0,1200,860);g.fillStyle='#0a1946';g.fillRect(0,0,1200,150);
+      g.fillStyle='#ffffff';g.font='700 40px '+F;g.fillText('NEXORA AUTO PRO',50,70);
+      g.font='400 24px '+F;g.fillStyle='#c7d3f5';g.fillText(m.org+'  ·  '+m.date,50,114);
+      m.kpis.forEach(function(k,i){
+        var x=50+(i%4)*280,y=190+Math.floor(i/4)*170;
+        g.fillStyle='#ffffff';g.fillRect(x,y,260,150);g.strokeStyle='#d6dcec';g.lineWidth=2;g.strokeRect(x,y,260,150);
+        g.fillStyle='#5b6578';g.font='500 19px '+F;g.fillText(k[0].length>30?k[0].slice(0,29)+'…':k[0],x+18,y+40);
+        g.fillStyle='#0a1946';g.font='700 '+(k[1].length>10?30:42)+'px '+F;g.fillText(k[1],x+18,y+100);
+      });
+      g.fillStyle='#0a1946';g.font='700 26px '+F;g.fillText('Viaturas disponíveis',50,580);
+      g.font='400 22px '+F;
+      (m.top.length?m.top:[['Sem viaturas disponíveis','']]).forEach(function(r,i){g.fillStyle='#27324a';g.fillText(r[0],50,620+i*30);g.textAlign='right';g.fillText(r[1],1150,620+i*30);g.textAlign='left'});
+      c.toBlob(function(b){res(b)},'image/png');
+    }catch(e){res(null)}
+  });
+}
+function pkAddReports(z,put){
+  var m=pkModel();
+  return Promise.all([pkDocx(m).arrayBuffer(),pkPdf(m).arrayBuffer(),pkPng(m).then(function(b){return b?b.arrayBuffer():null})]).then(function(r){
+    z.add('Relatorio-da-conta.docx',new Uint8Array(r[0]));
+    z.add('Relatorio-da-conta.pdf',new Uint8Array(r[1]));
+    if(r[2])z.add('Resumo-da-conta.png',new Uint8Array(r[2]));
+    put('dados/dados-completos.json',JSON.stringify(STORE,null,2));
+    Object.keys(STORE).forEach(function(k){var a=STORE[k];if(Array.isArray(a)&&a.length&&a[0]&&typeof a[0]==='object'){var c=toCsv(k);if(c)put('dados/'+k+'.csv','﻿'+c)}});
+  });
+}
+function pkSave(blob,name){
+  var app=window.NexoraApp;
+  if(app&&app.begin&&document.documentElement.classList.contains('is-app')){
+    return new Promise(function(res,rej){
+      if(!app.begin(name,blob.type||'application/octet-stream')){rej(new Error('begin'));return}
+      var CH=786432,off=0;
+      (function next(){
+        if(off>=blob.size){app.end()?res():rej(new Error('end'));return}
+        var fr=new FileReader();
+        fr.onload=function(){var s=String(fr.result);if(!app.chunk(s.slice(s.indexOf(',')+1))){rej(new Error('chunk'));return}off+=CH;next()};
+        fr.onerror=function(){rej(new Error('read'))};
+        fr.readAsDataURL(blob.slice(off,off+CH));
+      })();
+    });
+  }
+  var url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
+  return Promise.resolve();
 }
 /* ---------------- boot ---------------- */
 document.body.classList.add('locked');
