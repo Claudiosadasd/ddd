@@ -603,6 +603,18 @@ body.is-demo .acc-real-only{display:none!important}
 @media (max-width:600px){.intro-box{border-radius:12px}.intro-btn{font-size:13px;padding:8px 12px}}
 
 /* ---- Android app (UA NexoraAndroid) / ecrãs pequenos ---- */
+/* scroll mais fluido no telemóvel (só melhora; sem efeito em navegadores sem suporte) */
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.modal,.notif-panel,.rail-nav,.t-scroll,.dsr-nav,.table-wrap,.auth{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+body.mob{-webkit-tap-highlight-color:transparent}
+body.mob .bnav,body.mob .topbar{will-change:transform}
+@keyframes scrIn{from{opacity:.25;transform:translateY(16px)}to{opacity:1;transform:none}}
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    body.mob:not(.locked) .view .panel,body.mob:not(.locked) .view .kpi{animation:scrIn linear both;animation-timeline:view();animation-range:entry 0% entry 40%}
+  }
+}
 html.is-app{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 html.is-app body{-webkit-user-select:none;user-select:none;overscroll-behavior:none}
 html.is-app input,html.is-app textarea,html.is-app [contenteditable]{-webkit-user-select:text;user-select:text}
@@ -961,7 +973,7 @@ body.mob .pwr span{display:none}
         <div class="setting-row admin-only"><div><h4>Exportar dados</h4><p>Copia os registos em formato CSV (colar no Excel ou Numbers).</p></div><span class="meta"><button class="btn btn-ghost" data-csv="vehicles">Copiar CSV</button></span></div>
         <div class="setting-row"><div><h4>Visualização</h4><p>Escolhe como queres usar a plataforma: layout de telemóvel (com barra inferior e botões maiores) ou de computador. A escolha fica guardada neste navegador.</p></div><span class="meta"><span class="devseg"><button type="button" data-device="phone">Telemóvel</button><button type="button" data-device="desk">Computador</button></span></span></div>
         <div class="setting-row admin-only"><div><h4>Documentos da empresa</h4><p>Alvará IMT, certidão permanente, seguros, contratos e documentos fiscais num só local.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-files="org|org">Abrir documentos</button></span></div>
-        <div class="setting-row admin-only"><div><h4>Cópia de segurança</h4><p>Guarda todos os dados do stand num texto (JSON) e restaura-os quando quiseres. Os ficheiros carregados ficam no navegador e não entram na cópia.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-backup-copy>Copiar cópia</button> <button class="btn btn-ghost" type="button" data-backup-restore>Restaurar</button></span></div>
+        <div class="setting-row admin-only"><div><h4>Cópia de segurança</h4><p>Descarrega um ZIP com uma pasta por cliente (ficha, vendas e documentos), ou copia todos os dados num texto (JSON) para restaurar quando quiseres.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-backup-zip>⬇ ZIP por cliente</button> <button class="btn btn-ghost" type="button" data-backup-copy>Copiar cópia</button> <button class="btn btn-ghost" type="button" data-backup-restore>Restaurar</button></span></div>
         <div class="setting-row admin-only"><div><h4>Base de dados</h4><p id="cloudStatus">A ligar…</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-cloud-save>Guardar agora</button> <button class="btn btn-ghost" type="button" data-cloud-restore>Restaurar</button></span></div>
         <div class="setting-row admin-only"><div><h4>Stock para portais automóvel</h4><p>Gera o ficheiro com as viaturas disponíveis (matrícula, marca, modelo, versão, ano, km, combustível, cor, preço) para enviar a portais como Standvirtual, OLX ou CustoJusto. O endereço automático (URL que o portal consulta sozinho) e a ligação direta às contas dos portais só existem na versão com servidor.</p></div><span class="meta"><button class="btn btn-ghost" type="button" data-portal-feed="csv">Copiar CSV</button> <button class="btn btn-ghost" type="button" data-portal-feed="xml">Copiar XML</button></span></div>
         <div class="setting-row admin-only acc-demo-only"><div><h4>Repor dados da conta demo</h4><p>Restaura os dados iniciais da conta e apaga o que foi criado neste navegador (as contas de vendedor mantêm-se).</p></div><span class="meta"><button class="btn btn-ghost" id="btnSeed2">↺ Repor dados</button></span></div>
@@ -2936,6 +2948,7 @@ document.addEventListener('click',function(e){
   if(t.closest('#devBtn')){setDevice(isMob()?'desk':'phone');return;}
   x=t.closest('.bn-item[data-view]');if(x){location.hash='#'+x.getAttribute('data-view');return;}
   if(t.closest('[data-open-menu]')){openMenu();return;}
+  if(t.closest('[data-backup-zip]')){exportZipPorCliente();return;}
   if(t.closest('[data-backup-copy]')){if(!isAdmin())return;var js=JSON.stringify(STORE);copyText(js,'Cópia de segurança copiada. Guarda o texto num sítio seguro.','Cópia de segurança','nexora-backup.json','application/json');return;}
   if(t.closest('[data-backup-restore]')){if(!isAdmin())return;document.getElementById('modalRoot').innerHTML='<div class="modal-backdrop" id="modalBackdrop"><div role="dialog" aria-modal="true" class="modal" style="max-width:560px"><div class="modal-head"><div><span>CÓPIA DE SEGURANÇA</span><h2>Restaurar dados</h2></div><button id="modalClose" aria-label="Fechar">×</button></div><div style="padding:18px 24px 22px"><p class="rgpd-note" style="margin:0 0 10px">Cola o texto da cópia. Isto substitui todos os dados atuais deste stand.</p><textarea id="bkText" rows="7" style="width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px;font:12px var(--mono)"></textarea><div class="modal-error" id="bkErr" hidden></div><div class="modal-actions" style="padding:14px 0 0"><button type="button" class="btn btn-ghost" id="bkCancel">Cancelar</button><button type="button" class="btn btn-primary" data-backup-apply>Restaurar</button></div></div></div></div>';document.getElementById('modalClose').onclick=closeForm;document.getElementById('bkCancel').onclick=closeForm;return;}
   if(t.closest('[data-backup-apply]')){if(!isAdmin())return;var err=document.getElementById('bkErr'),d;try{d=JSON.parse(document.getElementById('bkText').value)}catch(e2){d=null}
@@ -3386,6 +3399,114 @@ function showIntro(){
     // segurança: nunca bloquear a entrada mais de 75 s
     setTimeout(close,75000);
   }catch(e){}
+}
+/* ---------------- cópia de segurança em ZIP (uma pasta por cliente) ---------------- */
+var CRC_T=null;
+function crc32(u8){
+  if(!CRC_T){CRC_T=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);CRC_T[n]=c>>>0}}
+  var crc=0xFFFFFFFF;for(var i=0;i<u8.length;i++)crc=CRC_T[(crc^u8[i])&255]^(crc>>>8);return (crc^0xFFFFFFFF)>>>0;
+}
+function ZipWriter(){this.parts=[];this.central=[];this.offset=0;this.count=0}
+ZipWriter.prototype.add=function(path,u8){
+  var nm=new TextEncoder().encode(path),d=new Date(),
+      dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(),
+      tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),
+      crc=crc32(u8),h=new DataView(new ArrayBuffer(30));
+  h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);
+  h.setUint16(10,tm,true);h.setUint16(12,dt,true);h.setUint32(14,crc,true);h.setUint32(18,u8.length,true);h.setUint32(22,u8.length,true);
+  h.setUint16(26,nm.length,true);h.setUint16(28,0,true);
+  this.parts.push(h.buffer,nm,u8);
+  this.central.push({nm:nm,crc:crc,size:u8.length,tm:tm,dt:dt,off:this.offset});
+  this.offset+=30+nm.length+u8.length;this.count++;
+};
+ZipWriter.prototype.finish=function(){
+  var self=this,start=this.offset,size=0;
+  this.central.forEach(function(e){
+    var h=new DataView(new ArrayBuffer(46));
+    h.setUint32(0,0x02014b50,true);h.setUint16(4,20,true);h.setUint16(6,20,true);h.setUint16(8,0x0800,true);h.setUint16(10,0,true);
+    h.setUint16(12,e.tm,true);h.setUint16(14,e.dt,true);h.setUint32(16,e.crc,true);h.setUint32(20,e.size,true);h.setUint32(24,e.size,true);
+    h.setUint16(28,e.nm.length,true);h.setUint32(42,e.off,true);
+    self.parts.push(h.buffer,e.nm);size+=46+e.nm.length;
+  });
+  var t=new DataView(new ArrayBuffer(22));
+  t.setUint32(0,0x06054b50,true);t.setUint16(8,this.count,true);t.setUint16(10,this.count,true);t.setUint32(12,size,true);t.setUint32(16,start,true);
+  this.parts.push(t.buffer);
+  return new Blob(this.parts,{type:'application/zip'});
+};
+function zipSafe(s,fb){
+  s=String(s||'').replace(/[\u0000-\u001f\\\/:*?"<>|]/g,' ').replace(/\s+/g,' ').replace(/^[.\s]+|[.\s]+$/g,'').slice(0,80);
+  return s||fb||'sem nome';
+}
+function zipUnique(used,name){
+  var base=name,i=2,ext='',m=/^(.*)(\.[A-Za-z0-9]{1,6})$/.exec(name);if(m){base=m[1];ext=m[2]}
+  var cand=name;while(used[cand.toLowerCase()]){cand=base+' ('+(i++)+')'+ext}
+  used[cand.toLowerCase()]=1;return cand;
+}
+function exportZipPorCliente(){
+  if(!isAdmin())return;
+  if(typeof Blob==='undefined'||typeof TextEncoder==='undefined'){toast('Este navegador não suporta ZIP. Usa «Copiar cópia».','err');return}
+  toast('A preparar o ZIP… pode demorar se houver muitos ficheiros.','ok');
+  var enc=new TextEncoder(),z=new ZipWriter(),missing=[],usedTop={},
+      money=function(c){return (Number(c||0)/100).toFixed(2).replace('.',',')+' €'},
+      veh=function(id){return (STORE.vehicles||[]).find(function(v){return v.id===id})},
+      vtxt=function(v){return v?(vehicleLabel(v)+(v.plate?' · '+v.plate:'')):'—'},
+      files=(STORE.files||[]).slice(),usedFile={};
+  function put(path,txt){z.add(path,enc.encode(txt))}
+  function addFiles(dir,list){
+    var used={};
+    return list.reduce(function(p,f){
+      return p.then(function(){return blobGet(f.id)}).then(function(b){
+        if(!b){usedFile[f.id]=1;missing.push(dir+'/'+f.name);return}
+        return b.arrayBuffer().then(function(ab){
+          var nm=zipUnique(used,zipSafe((f.cat?f.cat+' - ':'')+f.name,'ficheiro'));
+          z.add(dir+'/'+nm,new Uint8Array(ab));usedFile[f.id]=1;
+        });
+      }).catch(function(){usedFile[f.id]=1;missing.push(dir+'/'+f.name)});
+    },Promise.resolve());
+  }
+  var customers=(STORE.customers||[]).slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),'pt')});
+  var chain=Promise.resolve();
+  customers.forEach(function(c){
+    chain=chain.then(function(){
+      var folder=zipUnique(usedTop,zipSafe(c.name,'Cliente')),
+          leads=(STORE.leads||[]).filter(function(l){return l.customerId===c.id}),
+          sales=(STORE.sales||[]).filter(function(s){return s.customerId===c.id}),
+          L=['FICHA DO CLIENTE','','Nome: '+(c.name||''),'Email: '+(c.email||''),'Telefone: '+(c.phone||''),'Localidade: '+(c.city||''),'Observações: '+(c.notes||''),'','OPORTUNIDADES ('+leads.length+')'];
+      leads.forEach(function(l){L.push('- '+(l.status||'')+' · '+vtxt(veh(l.vehicleId))+' · origem: '+(l.source||'—')+(l.notes?' · '+l.notes:''))});
+      L.push('','VENDAS ('+sales.length+')');
+      sales.forEach(function(s){L.push('- '+(s.date||'')+' · '+vtxt(veh(s.vehicleId))+' · '+money(s.priceCents)+' · pagamento: '+(s.paymentStatus||'—')+' · '+(s.status||''))});
+      put(folder+'/ficha.txt',L.join('\r\n'));
+      put(folder+'/dados.json',JSON.stringify({cliente:c,oportunidades:leads,vendas:sales.map(function(s){return Object.assign({},s,{viatura:veh(s.vehicleId)||null})})},null,2));
+      var p=addFiles(folder+'/documentos',files.filter(function(f){return f.ownerType==='customer'&&f.ownerId===c.id}));
+      sales.forEach(function(s){
+        var sf=files.filter(function(f){return f.ownerType==='sale'&&f.ownerId===s.id});
+        if(sf.length)p=p.then(function(){return addFiles(folder+'/vendas/'+zipSafe((s.date||'')+' '+vtxt(veh(s.vehicleId)),'venda'),sf)});
+      });
+      return p;
+    });
+  });
+  chain.then(function(){
+    var rest=files.filter(function(f){return !usedFile[f.id]}),G='_Stand (dados gerais)';
+    put(G+'/cópia-completa.json',JSON.stringify(STORE));
+    var p=Promise.resolve();
+    Object.keys(OWNER_LABEL).forEach(function(t){
+      var fl=rest.filter(function(f){return f.ownerType===t});
+      if(fl.length)p=p.then(function(){return addFiles(G+'/ficheiros/'+OWNER_LABEL[t],fl)});
+    });
+    return p;
+  }).then(function(){
+    var R=['COPIA DE SEGURANÇA NEXORA',new Date().toLocaleString('pt-PT'),'',
+      'Cada pasta tem o nome de um cliente, com a ficha (ficha.txt), os dados (dados.json), os documentos e os contratos das vendas.',
+      'A pasta «_Stand (dados gerais)» tem a cópia completa (cópia-completa.json) e os restantes ficheiros (viaturas, despesas, danos, etc.).',
+      'Para restaurar, abre cópia-completa.json e cola o texto em Definições › Cópia de segurança › Restaurar.'];
+    if(missing.length){R.push('','FICHEIROS QUE NÃO FOI POSSÍVEL INCLUIR ('+missing.length+'):');missing.forEach(function(m){R.push('- '+m)})}
+    put('LEIA-ME.txt',R.join('\r\n'));
+    var blob=z.finish(),url=URL.createObjectURL(blob),a=document.createElement('a'),d=new Date();
+    a.href=url;a.download='nexora-copia-por-cliente-'+d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'.zip';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},60000);
+    audit('Cópia de segurança em ZIP descarregada');
+    toast('ZIP pronto: '+customers.length+' pastas de clientes'+(missing.length?' ('+missing.length+' ficheiros em falta)':'')+'.','ok');
+  }).catch(function(){toast('Não foi possível criar o ZIP. Tenta de novo ou usa «Copiar cópia».','err')});
 }
 /* ---------------- boot ---------------- */
 document.body.classList.add('locked');
