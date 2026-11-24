@@ -3387,8 +3387,8 @@ function showIntro(){
 document.body.classList.add('locked');
 ensureDemo().then(function(){
   var em=getSession(),acc=em&&getAccounts().find(function(x){return x.email===em});
-  if(acc)enterApp(acc,false);else{showAuth('login');showIntro();}
-}).catch(function(){showAuth('login');showIntro();document.getElementById('loginErr').textContent='Não foi possível iniciar a aplicação neste navegador.'});
+  if(acc)enterApp(acc,false);else{showAuth('login');}
+}).catch(function(){showAuth('login');document.getElementById('loginErr').textContent='Não foi possível iniciar a aplicação neste navegador.'});
 })();
 
 (function(){var h=location.hash||'';if(!/error_description=|type=signup|type=recovery|access_token=/.test(h))return;
