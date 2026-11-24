@@ -302,6 +302,19 @@ body.locked .auth{display:grid}
 .auth-spec:nth-child(even){padding-left:18px}
 .auth-spec b{display:block;color:#fff;font-size:13.5px;margin-bottom:3px}
 .auth-spec span{font-size:12px;line-height:1.5;color:#8d9ab8}
+.auth-ads{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px;color:#8d9ab8}
+.auth-ads>span{letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:600}
+.auth-ad{position:relative;display:block;width:132px;aspect-ratio:16/9;border:1px solid var(--navy-line);border-radius:6px;overflow:hidden;padding:0;background:#0B1630 center/cover no-repeat;cursor:pointer;opacity:.85;transition:opacity .15s,transform .15s}
+.auth-ad:hover,.auth-ad:focus-visible{opacity:1;transform:translateY(-1px);outline:2px solid #2A56E0}
+.auth-ad i{position:absolute;left:6px;bottom:6px;width:22px;height:22px;border-radius:50%;background:rgba(11,22,48,.78);display:grid;place-items:center}
+.auth-ad i:after{content:"";margin-left:2px;border-left:7px solid #fff;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+.auth-ad b{position:absolute;right:6px;bottom:6px;font:600 10px var(--mono);color:#fff;background:rgba(11,22,48,.78);padding:2px 5px;border-radius:3px}
+@media(max-width:860px){.auth-ads>span{flex-basis:100%}.auth-ad{width:calc(50% - 7px)}}
+.adv{position:fixed;inset:0;z-index:400;background:rgba(8,14,28,.82);display:flex;align-items:center;justify-content:center;padding:20px}
+.adv[hidden]{display:none}
+.adv-box{position:relative;width:min(960px,100%)}
+.adv-box video{display:block;width:100%;max-height:82vh;background:#000;border-radius:8px}
+.adv-x{position:absolute;right:0;top:-40px;border:0;background:none;color:#fff;font-size:30px;line-height:1;cursor:pointer;padding:4px 8px}
 .auth-plans{display:flex;gap:26px;font-size:12px;color:#8d9ab8;flex-wrap:wrap}
 .auth-plans strong{font-family:var(--mono);color:#fff;font-size:15px;display:block}
 .auth-side{display:flex;align-items:center;justify-content:center;padding:36px clamp(20px,4vw,56px)}
@@ -646,6 +659,10 @@ body.mob .pwr span{display:none}
       <div class="auth-spec"><b>Vendas e comissões</b><span>Regra congelada na venda; anulação sem perder histórico.</span></div>
       <div class="auth-spec"><b>Notificações e alertas</b><span>Cada alteração avisa a equipa até ser apagada; IUC, prazos e viaturas paradas à vista.</span></div>
       <div class="auth-spec"><b>Equipa, tarefas e telemóvel</b><span>O gestor atribui tarefas e metas; cada um vê só o que lhe cabe, no computador ou no telemóvel.</span></div>
+    </div>
+    <div class="auth-ads"><span>Ver os anúncios</span>
+      <button type="button" class="auth-ad" data-ad="videos/nexora-anuncio-30s.mp4" style="background-image:url(videos/anuncio-30s.jpg)" aria-label="Ver anúncio de 30 segundos"><i></i><b>0:30</b></button>
+      <button type="button" class="auth-ad" data-ad="videos/nexora-anuncio-15s.mp4" style="background-image:url(videos/anuncio-15s.jpg)" aria-label="Ver anúncio de 15 segundos"><i></i><b>0:15</b></button>
     </div>
     <div class="auth-plans"><div><strong>Free · 0 €</strong>10 viaturas · 2 vendedores</div><div><strong>Pro · desde 14,92 €/mês</strong>50 viaturas · 15 vendedores · anual −25%</div></div>
   </section>
@@ -3386,5 +3403,19 @@ ensureDemo().then(function(){
 </script>
 
 
+<div class="adv" id="advModal" hidden role="dialog" aria-modal="true" aria-label="Anúncio Nexora"><div class="adv-box"><button type="button" class="adv-x" id="advClose" aria-label="Fechar">×</button><video id="advVideo" controls playsinline preload="none"></video></div></div>
+<script>
+(function(){
+  var m=document.getElementById('advModal'),v=document.getElementById('advVideo');
+  if(!m||!v)return;
+  function close(){try{v.pause()}catch(e){}v.removeAttribute('src');v.load();m.hidden=true}
+  document.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest('[data-ad]');
+    if(b){v.src=b.getAttribute('data-ad');m.hidden=false;var p=v.play();if(p&&p.catch)p.catch(function(){})}
+    else if(e.target===m||e.target.id==='advClose')close();
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!m.hidden)close()});
+})();
+</script>
 <script src="chat.js" defer></script>
 </html>
