@@ -107,6 +107,7 @@ h1,h2,h3{text-wrap:balance;margin:0;font-family:var(--display);letter-spacing:-.
 
 .view{display:none;padding:26px max(22px,env(safe-area-inset-right,0px)) 60px 22px}
 .view.active{display:block}
+.fat-h{font-size:14px;font-weight:800;margin:22px 0 10px}
 .view-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:22px;flex-wrap:wrap}
 .view-head h1{font-size:21px;letter-spacing:-.01em;font-weight:800}
 .view-head p{margin:4px 0 0;font-size:12.5px;color:var(--muted)}
@@ -748,6 +749,7 @@ body.mob .pwr span{display:none}
       <button class="rail-item" data-view="comissoes"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="6.5" cy="6.5" r="2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="13.5" cy="13.5" r="2.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 4.5 4.5 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Comissões<span class="rail-bubble" id="bubble-comissoes"></span></button>
       <button class="rail-item" data-view="metas"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 10 15 5M13 3.4V7h3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Metas</button>
       <button class="rail-item" data-view="despesas"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4.5" width="15" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 8.2h15" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 11.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Despesas</button>
+      <button class="rail-item" data-view="faturacao"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M5 2.5h10v15l-2-1.3-1.5 1.3L10 16.2 8.5 17.5 7 16.2 5 17.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.5 7h5M7.5 10h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Faturação</button>
       <button class="rail-item" data-view="iuc"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="3" width="13" height="14" rx="2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 7.5h6M7 10.5h6M7 13.5h3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>IUC<span class="rail-bubble" id="bubble-iuc"></span></button>
       <button class="rail-item" data-view="relatorios"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M3 16.5V3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M3 16.5h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="5.6" y="10.5" width="2.4" height="6" rx=".6" fill="currentColor"/><rect x="10" y="7" width="2.4" height="9.5" rx=".6" fill="currentColor"/><rect x="14.4" y="12.3" width="2.4" height="4.2" rx=".6" fill="currentColor"/></svg>Relatórios</button>
       <div class="rail-group-label">STAND</div>
@@ -890,6 +892,28 @@ body.mob .pwr span{display:none}
         <thead><tr><th>Data</th><th>Viatura</th><th>Descrição</th><th>Categoria</th><th class="num">Valor</th><th></th></tr></thead>
         <tbody id="despesasBody"></tbody>
       </table></div></div>
+    </section>
+
+    <section class="view" id="v-faturacao">
+      <div class="view-head"><div><h1>Faturação</h1><p>Registo dos documentos ligados às vendas, compras e despesas</p></div></div>
+      <p class="note">A Nexora <b>não emite faturas nem outros documentos fiscais</b>. Esta área é apenas um registo: guarde aqui o número e o ficheiro das faturas emitidas no seu programa de faturação certificado.</p>
+      <h3 class="fat-h">Vendas</h3>
+      <div class="table-wrap"><div class="t-scroll"><table>
+        <thead><tr><th>Data</th><th>Cliente</th><th>Viatura</th><th>Nº da fatura</th><th class="num">Valor</th><th>Pagamento</th><th></th></tr></thead>
+        <tbody id="fatVendasBody"></tbody>
+      </table></div></div>
+      <div id="fatAdmin">
+        <h3 class="fat-h">Compras de viaturas</h3>
+        <div class="table-wrap"><div class="t-scroll"><table>
+          <thead><tr><th>Data</th><th>Fornecedor</th><th>Viatura</th><th>Nº da fatura</th><th class="num">Valor</th><th></th></tr></thead>
+          <tbody id="fatComprasBody"></tbody>
+        </table></div></div>
+        <h3 class="fat-h">Despesas</h3>
+        <div class="table-wrap"><div class="t-scroll"><table>
+          <thead><tr><th>Data</th><th>Viatura</th><th>Descrição</th><th class="num">Valor</th><th></th></tr></thead>
+          <tbody id="fatDespesasBody"></tbody>
+        </table></div></div>
+      </div>
     </section>
 
     <section class="view" id="v-danos">
@@ -1658,6 +1682,33 @@ function renderDespesas(){
   }).join('') || '<tr><td colspan="6"><div class="table-empty">Ainda não existem despesas registadas.</div></td></tr>';
 }
 
+function renderFaturacao(){
+  var adm=isAdmin();
+  var fc=function(type,id,cat){return STORE.files.filter(function(f){return f.ownerType===type&&f.ownerId===id&&f.cat===cat}).length};
+  var st=function(n,no){return no?'<span class="pill good">Registada</span>':(n?'<span class="pill warn">Só ficheiro</span>':'<span class="pill flat">Sem fatura</span>')};
+  var sales=STORE.sales.filter(function(x){return x.status!=='anulada'}).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')});
+  document.getElementById('fatVendasBody').innerHTML=sales.map(function(x){
+    var n=fc('sale',x.id,'Fatura de venda');
+    return '<tr><td>'+fmtDate(x.date)+'</td><td class="cell-primary">'+escapeHtml(customerLabel(findCustomer(x.customerId)))+'</td><td>'+vlink(x.vehicleId)+'</td><td>'+(x.invoiceNo?escapeHtml(x.invoiceNo):st(n,false))+'</td><td class="num">'+euro(x.priceCents)+'</td><td>'+escapeHtml(x.paymentStatus||'—')+'</td>'+
+      '<td><div class="row-actions"><button class="mini" data-files="sale|'+x.id+'">Fatura'+(n?' ('+n+')':'')+'</button></div></td></tr>';
+  }).join('')||'<tr><td colspan="7"><div class="table-empty">Ainda não existem vendas registadas.</div></td></tr>';
+  document.getElementById('fatAdmin').style.display=adm?'':'none';
+  if(!adm)return;
+  var sup=function(id){var q=STORE.suppliers.find(function(y){return y.id===id});return q?q.name:'—'};
+  var buys=STORE.vehicles.filter(function(v){return v.purchaseCents||v.invoiceNo}).sort(function(a,b){return (b.purchaseDate||'').localeCompare(a.purchaseDate||'')});
+  document.getElementById('fatComprasBody').innerHTML=buys.map(function(v){
+    var n=fc('vehicle',v.id,'Fatura de compra');
+    return '<tr><td>'+(v.purchaseDate?fmtDate(v.purchaseDate):'—')+'</td><td>'+escapeHtml(sup(v.supplierId))+'</td><td class="cell-primary">'+vlink(v.id)+'</td><td>'+(v.invoiceNo?escapeHtml(v.invoiceNo):st(n,false))+'</td><td class="num">'+euro(v.purchaseCents)+'</td>'+
+      '<td><div class="row-actions"><button class="mini" data-files="vehicle|'+v.id+'">Fatura'+(n?' ('+n+')':'')+'</button></div></td></tr>';
+  }).join('')||'<tr><td colspan="6"><div class="table-empty">Sem compras registadas.</div></td></tr>';
+  var cs=STORE.costs.slice().sort(function(a,b){return (b.date||'').localeCompare(a.date||'')});
+  document.getElementById('fatDespesasBody').innerHTML=cs.map(function(c){
+    var n=fc('cost',c.id,'Fatura');
+    return '<tr><td>'+fmtDate(c.date)+'</td><td class="cell-primary">'+vlink(c.vehicleId)+'</td><td>'+escapeHtml(c.description)+'</td><td class="num">'+euro(c.amountCents)+'</td>'+
+      '<td><div class="row-actions">'+st(n,false)+'<button class="mini" data-files="cost|'+c.id+'">Fatura'+(n?' ('+n+')':'')+'</button></div></td></tr>';
+  }).join('')||'<tr><td colspan="5"><div class="table-empty">Sem despesas registadas.</div></td></tr>';
+}
+
 function renderRelatorios(){
   var months=monthBuckets(activeSales(),'date',function(s){return s.priceCents/100});
   var marginMonths=monthBuckets(activeSales(),'date',function(s){return saleMargin(s)/100});
@@ -1865,7 +1916,7 @@ function renderAudit(){
   el.innerHTML='<h4>Registo de ações do administrador</h4>'+(a.length?'<ul class="audit">'+a.map(function(x){return '<li><span>'+new Date(x.at).toLocaleString('pt-PT')+'</span> <b>'+escapeHtml(x.by)+'</b> · '+escapeHtml(x.action)+'</li>'}).join('')+'</ul>':'<p>Sem ações registadas.</p>');
 }
 function renderAll(){
-  renderMe();renderTeam();renderOrgRow();renderAudit();renderDashboard();renderFrota();renderClientes();renderKanban();renderCompras();renderAvaliador();renderMarketplace();renderVendas();renderDespesas();renderRelatorios();renderDanos();renderFornecedores();renderComissoes();renderMetas();renderIuc();refreshFeatUI();
+  renderMe();renderTeam();renderOrgRow();renderAudit();renderDashboard();renderFrota();renderClientes();renderKanban();renderCompras();renderAvaliador();renderMarketplace();renderVendas();renderDespesas();renderFaturacao();renderRelatorios();renderDanos();renderFornecedores();renderComissoes();renderMetas();renderIuc();refreshFeatUI();
 }
 
 /* ---------------- CSV export (clipboard — downloads are sandboxed here) ---------------- */
@@ -2390,8 +2441,8 @@ document.addEventListener('click',function(e){
 document.addEventListener('input',function(e){if(e.target.id==='mkQ'||e.target.id==='mkMax'||e.target.id==='mkFuel'||e.target.id==='mkSort')renderMarketplace();});
 
 /* ---------------- navigation ---------------- */
-var views=['dashboard','tarefas','frota','danos','fornecedores','clientes','crm','compras','avaliador','marketplace','vendas','comissoes','metas','despesas','iuc','relatorios','planos','definicoes'];
-var labels={tarefas:'Tarefas',dashboard:'Dashboard',frota:'Parque Automóvel',clientes:'Clientes',crm:'Oportunidades',compras:'Compras / Retomas',avaliador:'Avaliador de usados',marketplace:'Marketplace de stands',vendas:'Vendas',despesas:'Despesas',relatorios:'Relatórios',definicoes:'Definições',planos:'Atualizar plano',danos:'Danos / Estado',fornecedores:'Fornecedores',comissoes:'Comissões',metas:'Metas',iuc:'IUC'};
+var views=['dashboard','tarefas','frota','danos','fornecedores','clientes','crm','compras','avaliador','marketplace','vendas','comissoes','metas','despesas','faturacao','iuc','relatorios','planos','definicoes'];
+var labels={tarefas:'Tarefas',dashboard:'Dashboard',frota:'Parque Automóvel',clientes:'Clientes',crm:'Oportunidades',compras:'Compras / Retomas',avaliador:'Avaliador de usados',marketplace:'Marketplace de stands',vendas:'Vendas',despesas:'Despesas',faturacao:'Faturação',relatorios:'Relatórios',definicoes:'Definições',planos:'Atualizar plano',danos:'Danos / Estado',fornecedores:'Fornecedores',comissoes:'Comissões',metas:'Metas',iuc:'IUC'};
 var rail=document.getElementById('rail'),scrim=document.getElementById('scrim'),menuBtn=document.getElementById('menuBtn'),crumb=document.getElementById('crumbLabel');
 function showView(name){
   if(views.indexOf(name)===-1)name='dashboard';
